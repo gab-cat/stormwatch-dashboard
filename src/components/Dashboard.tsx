@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Map from './Map';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
-import { AlertTriangle, CheckCircle, CloudRain, Map as MapIcon, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, CloudRain, Map as MapIcon, Info, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
+import PredictionCards from './public/PredictionCards';
 
 export default function Dashboard() {
   const [selectedRoadId, setSelectedRoadId] = useState<Id<"roads"> | null>(null);
@@ -139,7 +141,15 @@ export default function Dashboard() {
             )}
           </div>
           
-          {/* Active Alerts List (Mockup for now, could be real later) */}
+          {/* Flood Predictions */}
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Flood Predictions</h2>
+            <div className="max-h-96 overflow-y-auto">
+              <PredictionCards />
+            </div>
+          </div>
+
+          {/* Active Alerts List */}
           <div>
              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Active Alerts</h2>
              {floodedCount > 0 ? (
@@ -162,6 +172,13 @@ export default function Dashboard() {
         </div>
         
         <div className="p-4 border-t border-dark-700 bg-dark-800/50">
+          <Link
+            to="/admin"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2 mb-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors text-sm font-medium"
+          >
+            <Settings className="w-4 h-4" />
+            Admin Panel
+          </Link>
           <p className="text-xs text-center text-gray-500">
             StormWatch v1.0 • Naga City
           </p>
