@@ -16,7 +16,7 @@ import type * as predictions from "../predictions.js";
 import type * as readings from "../readings.js";
 import type * as roadSegments from "../roadSegments.js";
 import type * as roads from "../roads.js";
-import type * as zones from "../zones.js";
+import type * as simulation from "../simulation.js";
 
 import type {
   ApiFromModules,
@@ -33,7 +33,7 @@ declare const fullApi: ApiFromModules<{
   readings: typeof readings;
   roadSegments: typeof roadSegments;
   roads: typeof roads;
-  zones: typeof zones;
+  simulation: typeof simulation;
 }>;
 
 /**
