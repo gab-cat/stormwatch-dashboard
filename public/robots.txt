@@ -1,0 +1,13 @@
+# Robots.txt for StormWatch
+# Allow all search engines to crawl public pages
+
+User-agent: *
+Allow: /
+Allow: /docs
+
+# Disallow admin routes
+Disallow: /admin/
+Disallow: /admin/*
+
+# Sitemap location
+Sitemap: https://stormwatch-dashboard.vercel.app/sitemap.xml
