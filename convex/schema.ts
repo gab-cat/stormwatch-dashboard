@@ -30,15 +30,6 @@ export default defineSchema({
     .index("by_osmId", ["osmId"])
     .index("by_gridCell", ["gridCell"]),
 
-  // Flood prediction zones (polygon areas)
-  floodZones: defineTable({
-    name: v.string(),
-    description: v.optional(v.string()),
-    polygon: v.array(v.array(v.number())), // [[lat, lng], [lat, lng], ...] forming closed polygon
-    center: v.array(v.number()), // [lat, lng] center point
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_center", ["center"]),
 
   // IoT device registry
   iotDevices: defineTable({
@@ -53,6 +44,7 @@ export default defineSchema({
     capabilities: v.array(v.string()), // ["water_level", "temperature", etc.]
     owner: v.string(), // Owner/organization name
     location: v.array(v.number()), // [lat, lng]
+    influenceRadius: v.number(), // Influence radius in meters (default 500m)
     isAlive: v.boolean(),
     lastSeen: v.number(),
     metadata: v.optional(v.any()), // Additional device-specific data
@@ -84,7 +76,7 @@ export default defineSchema({
 
   // Flood predictions from external server
   predictions: defineTable({
-    zoneId: v.id("floodZones"),
+    deviceId: v.id("iotDevices"),
     timeHorizon: v.union(
       v.literal("1h"),
       v.literal("2h"),
@@ -103,7 +95,7 @@ export default defineSchema({
     validUntil: v.number(), // When this prediction expires
     metadata: v.optional(v.any()), // Additional prediction data
   })
-    .index("by_zone", ["zoneId"])
+    .index("by_device", ["deviceId"])
     .index("by_horizon", ["timeHorizon"])
     .index("by_validUntil", ["validUntil"]),
 
@@ -117,7 +109,7 @@ export default defineSchema({
       v.literal("danger"),
       v.literal("critical")
     ),
-    affectedZoneIds: v.array(v.id("floodZones")),
+    affectedDeviceIds: v.array(v.id("iotDevices")),
     affectedRoadIds: v.optional(v.array(v.id("roadSegments"))),
     isActive: v.boolean(),
     startsAt: v.number(),
