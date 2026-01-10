@@ -194,10 +194,10 @@ http.route({
     // }
 
     // Validate prediction data structure
-    if (!body.zoneId || !body.predictions || !Array.isArray(body.predictions)) {
+    if (!body.deviceId || !body.predictions || !Array.isArray(body.predictions)) {
       return new Response(
         JSON.stringify({
-          error: "Missing required fields: zoneId, predictions (array)",
+          error: "Missing required fields: deviceId, predictions (array)",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -216,7 +216,7 @@ http.route({
       }
 
       const predictionId = await ctx.runMutation(api.predictions.upsert, {
-        zoneId: body.zoneId,
+        deviceId: body.deviceId,
         timeHorizon: pred.timeHorizon,
         floodProbability: pred.floodProbability,
         predictedWaterLevel: pred.predictedWaterLevel,
@@ -232,14 +232,14 @@ http.route({
     // Optionally create/update alerts based on predictions
     if (body.createAlerts !== false) {
       await ctx.runMutation(api.alerts.updateFromPredictions, {
-        zoneId: body.zoneId,
+        deviceId: body.deviceId,
       });
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        zoneId: body.zoneId,
+        deviceId: body.deviceId,
         predictionsCreated: results.length,
         results,
       }),

@@ -2,6 +2,37 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
+ * Calculate severity from flood height (in cm)
+ * - Low: < 20cm
+ * - Medium: 20-50cm
+ * - High: 50-100cm
+ * - Critical: ≥ 100cm
+ */
+export function getSeverityFromHeight(
+  height: number
+): "low" | "medium" | "high" | "critical" {
+  if (height < 20) return "low";
+  if (height < 50) return "medium";
+  if (height < 100) return "high";
+  return "critical";
+}
+
+/**
+ * Calculate passability from flood height (in cm)
+ * - Vehicles impassable: ≥ 30cm
+ * - Humans impassable: ≥ 50cm
+ */
+export function getPassability(height: number): {
+  vehicles: boolean;
+  humans: boolean;
+} {
+  return {
+    vehicles: height < 30,
+    humans: height < 50,
+  };
+}
+
+/**
  * Get all predictions
  */
 export const getAll = query({
@@ -12,31 +43,31 @@ export const getAll = query({
 });
 
 /**
- * Get predictions for a specific zone
+ * Get predictions for a specific device
  */
-export const getByZone = query({
+export const getByDevice = query({
   args: {
-    zoneId: v.id("floodZones"),
+    deviceId: v.id("iotDevices"),
   },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("predictions")
-      .withIndex("by_zone", (q) => q.eq("zoneId", args.zoneId))
+      .withIndex("by_device", (q) => q.eq("deviceId", args.deviceId))
       .collect();
   },
 });
 
 /**
- * Get latest predictions for a zone by time horizon
+ * Get latest predictions for a device by time horizon
  */
-export const getLatestByZone = query({
+export const getLatestByDevice = query({
   args: {
-    zoneId: v.id("floodZones"),
+    deviceId: v.id("iotDevices"),
   },
   handler: async (ctx, args) => {
     const allPredictions = await ctx.db
       .query("predictions")
-      .withIndex("by_zone", (q) => q.eq("zoneId", args.zoneId))
+      .withIndex("by_device", (q) => q.eq("deviceId", args.deviceId))
       .collect();
 
     // Group by time horizon and get the most recent for each
@@ -94,7 +125,7 @@ export const getValid = query({
  */
 export const upsert = mutation({
   args: {
-    zoneId: v.id("floodZones"),
+    deviceId: v.id("iotDevices"),
     timeHorizon: v.union(
       v.literal("1h"),
       v.literal("2h"),
@@ -114,10 +145,10 @@ export const upsert = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    // Check if prediction already exists for this zone + horizon
+    // Check if prediction already exists for this device + horizon
     const existing = await ctx.db
       .query("predictions")
-      .withIndex("by_zone", (q) => q.eq("zoneId", args.zoneId))
+      .withIndex("by_device", (q) => q.eq("deviceId", args.deviceId))
       .filter((q) => q.eq(q.field("timeHorizon"), args.timeHorizon))
       .first();
 
@@ -135,7 +166,7 @@ export const upsert = mutation({
     } else {
       // Create new
       return await ctx.db.insert("predictions", {
-        zoneId: args.zoneId,
+        deviceId: args.deviceId,
         timeHorizon: args.timeHorizon,
         floodProbability: args.floodProbability,
         predictedWaterLevel: args.predictedWaterLevel,

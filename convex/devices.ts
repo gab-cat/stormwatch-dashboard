@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Get all IoT devices
@@ -72,6 +73,50 @@ export const getAlive = query({
 });
 
 /**
+ * Get devices with location data for map display
+ */
+export const getWithLocations = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("iotDevices").collect();
+  },
+});
+
+/**
+ * Get devices that influence a specific point (within their influence radius)
+ */
+export const getDevicesAffectingPoint = query({
+  args: {
+    lat: v.number(),
+    lng: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const devices = await ctx.db.query("iotDevices").collect();
+    
+    // Haversine distance formula
+    const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371000; // Earth radius in meters
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+    
+    return devices.filter((device) => {
+      const [deviceLat, deviceLng] = device.location;
+      const distance = haversineDistance(args.lat, args.lng, deviceLat, deviceLng);
+      return distance <= device.influenceRadius;
+    });
+  },
+});
+
+/**
  * Create a new IoT device
  */
 export const create = mutation({
@@ -87,10 +132,13 @@ export const create = mutation({
     capabilities: v.array(v.string()),
     owner: v.string(),
     location: v.array(v.number()), // [lat, lng]
+    influenceRadius: v.optional(v.number()), // in meters, default 500
     metadata: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
+  returns: v.id("iotDevices"),
+  handler: async (ctx, args): Promise<Id<"iotDevices">> => {
     const now = Date.now();
+    
     return await ctx.db.insert("iotDevices", {
       apiKey: args.apiKey,
       name: args.name,
@@ -98,6 +146,7 @@ export const create = mutation({
       capabilities: args.capabilities,
       owner: args.owner,
       location: args.location,
+      influenceRadius: args.influenceRadius ?? 500, // Default 500 meters
       isAlive: true,
       lastSeen: now,
       metadata: args.metadata,
@@ -157,14 +206,18 @@ export const update = mutation({
     capabilities: v.optional(v.array(v.string())),
     owner: v.optional(v.string()),
     location: v.optional(v.array(v.number())),
+    influenceRadius: v.optional(v.number()),
     metadata: v.optional(v.any()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
+    
     await ctx.db.patch(id, {
       ...updates,
       updatedAt: Date.now(),
     });
+    return null;
   },
 });
 
