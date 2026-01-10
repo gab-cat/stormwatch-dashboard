@@ -1,12 +1,37 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Clock, AlertTriangle, Droplet } from "lucide-react";
+import { Clock, AlertTriangle, Car, User } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Badge } from "../ui/badge";
 
-function ZonePredictionCard({ zoneId }: { zoneId: Id<"floodZones"> }) {
-  const zone = useQuery(api.zones.getById, { id: zoneId });
-  const predictions = useQuery(api.predictions.getLatestByZone, { zoneId });
+/**
+ * Calculate passability from flood height (in cm)
+ * - Vehicles impassable: ≥ 30cm
+ * - Humans impassable: ≥ 50cm
+ */
+function getPassability(height: number): {
+  vehicles: boolean;
+  humans: boolean;
+} {
+  return {
+    vehicles: height < 30,
+    humans: height < 50,
+  };
+}
+
+function DevicePredictionCard({ 
+  deviceId, 
+  onDeviceClick,
+  isSelected 
+}: { 
+  deviceId: Id<"iotDevices">;
+  onDeviceClick?: (deviceId: Id<"iotDevices">) => void;
+  isSelected?: boolean;
+}) {
+  const device = useQuery(api.devices.getById, { id: deviceId });
+  const predictions = useQuery(api.predictions.getLatestByDevice, { deviceId });
 
   const timeHorizons = ["1h", "2h", "4h", "8h"] as const;
 
@@ -25,14 +50,24 @@ function ZonePredictionCard({ zoneId }: { zoneId: Id<"floodZones"> }) {
     }
   };
 
-  if (!zone) return null;
+  if (!device) return null;
 
   if (!predictions || predictions.length === 0) {
     return (
-      <div className="bg-dark-800 border border-dark-700 rounded-xl p-6">
-        <h3 className="font-bold text-lg mb-2">{zone.name}</h3>
-        <p className="text-gray-400 text-sm">No predictions available yet.</p>
-      </div>
+      <Card 
+        className={cn(
+          "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+          isSelected && "border-primary border-2 shadow-lg"
+        )}
+        onClick={() => onDeviceClick?.(deviceId)}
+      >
+        <CardHeader>
+          <CardTitle className="text-lg">{device.name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">No predictions available yet.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -42,79 +77,120 @@ function ZonePredictionCard({ zoneId }: { zoneId: Id<"floodZones"> }) {
   );
 
   return (
-    <div className="bg-dark-800 border border-dark-700 rounded-xl p-6">
-      <h3 className="font-bold text-lg mb-2">{zone.name}</h3>
-      {zone.description && (
-        <p className="text-sm text-gray-400 mb-4">{zone.description}</p>
+    <Card 
+      className={cn(
+        "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+        isSelected && "border-primary border-2 shadow-lg"
       )}
+      onClick={() => onDeviceClick?.(deviceId)}
+    >
+      <CardHeader>
+        <CardTitle className="text-lg">{device.name}</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {device.type.replace('_', ' ')} • {device.influenceRadius}m radius
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {predictionsByHorizon.map((prediction, index) => {
+            const horizon = timeHorizons[index];
+            if (!prediction) {
+              return (
+                <Card key={horizon} className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <Clock className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
+                    <div className="text-xs font-medium text-muted-foreground mb-1">
+                      {horizon}
+                    </div>
+                    <div className="text-sm text-muted-foreground">No data</div>
+                  </CardContent>
+                </Card>
+              );
+            }
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {predictionsByHorizon.map((prediction, index) => {
-          const horizon = timeHorizons[index];
-          if (!prediction) {
+            const waterLevel = prediction.predictedWaterLevel ?? 0;
+            const passability = getPassability(waterLevel);
+
             return (
-              <div
+              <Card
                 key={horizon}
-                className="bg-dark-700/50 border border-dark-600 rounded-lg p-4 text-center"
+                className={getSeverityColor(prediction.severity)}
               >
-                <Clock className="w-5 h-5 text-gray-500 mx-auto mb-2" />
-                <div className="text-xs font-medium text-gray-500 mb-1">
-                  {horizon}
-                </div>
-                <div className="text-sm text-gray-600">No data</div>
-              </div>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs font-medium">{horizon}</span>
+                  </div>
+                  <div className="mb-2">
+                    <div className="text-2xl font-bold">
+                      {waterLevel > 0 ? `${waterLevel.toFixed(0)}` : '—'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">cm height</div>
+                  </div>
+                  {waterLevel > 0 && (
+                    <div className="space-y-1.5 mt-3">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <Car className={cn(
+                          "w-3 h-3",
+                          passability.vehicles ? "text-emerald-400" : "text-red-400"
+                        )} />
+                        <span className={cn(
+                          passability.vehicles ? "text-emerald-400" : "text-red-400"
+                        )}>
+                          {passability.vehicles ? "Passable" : "Impassable"}
+                        </span>
+                        <span className="text-muted-foreground">(vehicles)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <User className={cn(
+                          "w-3 h-3",
+                          passability.humans ? "text-emerald-400" : "text-red-400"
+                        )} />
+                        <span className={cn(
+                          passability.humans ? "text-emerald-400" : "text-red-400"
+                        )}>
+                          {passability.humans ? "Passable" : "Impassable"}
+                        </span>
+                        <span className="text-muted-foreground">(humans)</span>
+                      </div>
+                    </div>
+                  )}
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "mt-2 w-full justify-center",
+                      getSeverityColor(prediction.severity)
+                    )}
+                  >
+                    {prediction.severity.toUpperCase()}
+                  </Badge>
+                </CardContent>
+              </Card>
             );
-          }
-
-          return (
-            <div
-              key={horizon}
-              className={cn(
-                "border rounded-lg p-4",
-                getSeverityColor(prediction.severity)
-              )}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <Clock className="w-4 h-4" />
-                <span className="text-xs font-medium">{horizon}</span>
-              </div>
-              <div className="mb-2">
-                <div className="text-2xl font-bold">
-                  {(prediction.floodProbability * 100).toFixed(0)}%
-                </div>
-                <div className="text-xs text-gray-400">Flood Risk</div>
-              </div>
-              {prediction.predictedWaterLevel && (
-                <div className="flex items-center gap-1 text-xs">
-                  <Droplet className="w-3 h-3" />
-                  <span>{prediction.predictedWaterLevel}cm</span>
-                </div>
-              )}
-              <div
-                className={cn(
-                  "mt-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-                  getSeverityColor(prediction.severity)
-                )}
-              >
-                {prediction.severity.toUpperCase()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-export default function PredictionCards() {
-  const zones = useQuery(api.zones.getAll);
+export default function PredictionCards({ 
+  onDeviceClick,
+  selectedDeviceId 
+}: { 
+  onDeviceClick?: (deviceId: Id<"iotDevices">) => void;
+  selectedDeviceId?: Id<"iotDevices"> | null;
+}) {
+  const devices = useQuery(api.devices.getAll);
   const activeAlerts = useQuery(api.alerts.getActive);
 
-  if (!zones || zones.length === 0) {
+  if (!devices || devices.length === 0) {
     return (
-      <div className="bg-dark-800 border border-dark-700 rounded-xl p-6">
-        <p className="text-gray-400 text-center">No flood zones configured yet.</p>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground text-center">No devices configured yet.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -122,27 +198,34 @@ export default function PredictionCards() {
     <div className="space-y-6">
       {/* Active Alerts Banner */}
       {activeAlerts && activeAlerts.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-bold text-red-400 mb-2">Active Flood Alerts</h3>
-              <div className="space-y-2">
-                {activeAlerts.map((alert) => (
-                  <div key={alert._id}>
-                    <p className="font-medium text-red-300">{alert.title}</p>
-                    <p className="text-sm text-red-400/80">{alert.message}</p>
-                  </div>
-                ))}
+        <Card className="bg-red-500/10 border-red-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-bold text-red-400 mb-2">Active Flood Alerts</h3>
+                <div className="space-y-2">
+                  {activeAlerts.map((alert) => (
+                    <div key={alert._id}>
+                      <p className="font-medium text-red-300">{alert.title}</p>
+                      <p className="text-sm text-red-400/80">{alert.message}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Prediction Cards for Each Zone */}
-      {zones.map((zone) => (
-        <ZonePredictionCard key={zone._id} zoneId={zone._id} />
+      {/* Prediction Cards for Each Device */}
+      {devices.map((device) => (
+        <DevicePredictionCard 
+          key={device._id} 
+          deviceId={device._id}
+          onDeviceClick={onDeviceClick}
+          isSelected={selectedDeviceId === device._id}
+        />
       ))}
     </div>
   );
