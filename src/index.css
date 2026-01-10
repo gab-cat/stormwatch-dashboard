@@ -1,13 +1,122 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   color-scheme: dark;
+
+  /* Shadcn UI Theme Variables - Dark Theme (HSL values without hsl() wrapper) */
+  --background: 0 0% 3.9%; /* dark-900 equivalent */
+  --foreground: 0 0% 98%;
+
+  --card: 0 0% 7.1%; /* dark-800 equivalent */
+  --card-foreground: 0 0% 98%;
+
+  --popover: 0 0% 7.1%; /* dark-800 equivalent */
+  --popover-foreground: 0 0% 98%;
+
+  --primary: 217 91% 60%; /* brand-500 equivalent */
+  --primary-foreground: 0 0% 98%;
+
+  --secondary: 0 0% 14.9%; /* dark-700 equivalent */
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 0 0% 14.9%; /* dark-700 equivalent */
+  --muted-foreground: 0 0% 63.9%;
+
+  --accent: 0 0% 14.9%; /* dark-700 equivalent */
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 0 0% 14.9%; /* dark-700 equivalent */
+  --input: 0 0% 14.9%; /* dark-700 equivalent */
+  --ring: 217 91% 60%; /* brand-500 equivalent */
+
+  --radius: 0.5rem;
 }
 
-body {
-  @apply bg-dark-900 text-white font-sans;
+@theme inline {
+  --font-family-sans: "Poppins", sans-serif;
+
+  /* Custom dark colors */
+  --color-dark-900: #0a0a0a;
+  --color-dark-800: #121212;
+  --color-dark-700: #1a1a1a;
+  --color-dark-600: #262626;
+
+  /* Custom brand colors */
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+
+  /* Map shadcn CSS variables to Tailwind color utilities */
+  /* Tailwind v4 automatically handles opacity modifiers with hsl() */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    outline-color: hsl(var(--ring));
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@keyframes alert-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes zone-highlight {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+  }
+}
+
+.zone-critical-alert {
+  animation: alert-pulse 3s ease-in-out infinite;
+}
+
+.zone-selected {
+  animation: zone-highlight 2s ease-in-out infinite;
+  cursor: pointer;
 }
