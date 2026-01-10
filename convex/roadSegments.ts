@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import type { PaginationOptions, PaginationResult } from "convex/server";
+import type { PaginationResult } from "convex/server";
 
 /**
  * Calculate grid cell ID from coordinates (0.01 degree precision ~1km)

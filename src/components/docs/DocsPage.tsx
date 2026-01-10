@@ -447,7 +447,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
   );
 }
 
-function CodeExamples({ examples, sectionId }: { examples: CodeExample[]; sectionId: string }) {
+function CodeExamples({ examples }: { examples: CodeExample[] }) {
   const [activeTab, setActiveTab] = useState(0);
 
   if (examples.length === 0) return null;
@@ -712,7 +712,7 @@ export default function DocsPage() {
                   </div>
                 </div>
 
-                <CodeExamples examples={codeExamples.register} sectionId="register" />
+                <CodeExamples examples={codeExamples.register} />
               </div>
             </section>
 
@@ -764,7 +764,7 @@ export default function DocsPage() {
                   </div>
                 </div>
 
-                <CodeExamples examples={codeExamples.submitReading} sectionId="submit-reading" />
+                <CodeExamples examples={codeExamples.submitReading} />
               </div>
             </section>
 
@@ -805,7 +805,7 @@ export default function DocsPage() {
                   </div>
                 </div>
 
-                <CodeExamples examples={codeExamples.heartbeat} sectionId="heartbeat" />
+                <CodeExamples examples={codeExamples.heartbeat} />
               </div>
             </section>
 

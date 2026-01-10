@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { MapPin, Plus, Trash2, Edit } from "lucide-react";
+import { MapPin, Plus, Trash2 } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 export default function ZoneEditor() {
   const zones = useQuery(api.zones.getAll);
   const createZone = useMutation(api.zones.create);
-  const updateZone = useMutation(api.zones.update);
   const removeZone = useMutation(api.zones.remove);
 
   const [showAddModal, setShowAddModal] = useState(false);

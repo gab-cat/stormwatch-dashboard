@@ -9,19 +9,19 @@ import { cn } from '../lib/utils';
 import PredictionCards from './public/PredictionCards';
 
 export default function Dashboard() {
-  const [selectedRoadId, setSelectedRoadId] = useState<Id<"roads"> | null>(null);
-  const roads = useQuery(api.roads.get);
-  const updateStatus = useMutation(api.roads.updateStatus);
+  const [selectedRoadId, setSelectedRoadId] = useState<Id<"roadSegments"> | null>(null);
+  const roadSegments = useQuery(api.roadSegments.getAll);
+  const updateStatus = useMutation(api.roadSegments.updateStatus);
 
-  const selectedRoad = roads?.find(r => r._id === selectedRoadId);
+  const selectedRoad = roadSegments?.find(r => r._id === selectedRoadId);
 
   const handleStatusUpdate = async (status: "clear" | "risk" | "flooded") => {
     if (!selectedRoadId) return;
     await updateStatus({ id: selectedRoadId, status });
   };
 
-  const floodedCount = roads?.filter(r => r.status === 'flooded').length || 0;
-  const riskCount = roads?.filter(r => r.status === 'risk').length || 0;
+  const floodedCount = roadSegments?.filter(r => r.status === 'flooded').length || 0;
+  const riskCount = roadSegments?.filter(r => r.status === 'risk').length || 0;
 
   return (
     <div className="flex h-screen w-full bg-dark-900 text-white overflow-hidden">
@@ -154,7 +154,7 @@ export default function Dashboard() {
              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Active Alerts</h2>
              {floodedCount > 0 ? (
                <div className="space-y-2">
-                 {roads?.filter(r => r.status === 'flooded').map(road => (
+                 {roadSegments?.filter(r => r.status === 'flooded').map(road => (
                    <div key={road._id} className="flex items-start gap-3 p-3 bg-red-500/5 border border-red-500/10 rounded-lg">
                      <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                      <div>

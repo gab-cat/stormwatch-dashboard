@@ -16,12 +16,10 @@ import type { Id } from "../../../convex/_generated/dataModel";
 export default function DeviceManager() {
   const devices = useQuery(api.devices.getAll);
   const createDevice = useMutation(api.devices.create);
-  const updateDevice = useMutation(api.devices.update);
   const removeDevice = useMutation(api.devices.remove);
   const regenerateApiKey = useMutation(api.devices.regenerateApiKey);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingDevice, setEditingDevice] = useState<Id<"iotDevices"> | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     type: "water_level" as const,

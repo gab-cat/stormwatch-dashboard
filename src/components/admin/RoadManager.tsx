@@ -20,7 +20,6 @@ export default function RoadManager() {
   const allSegments = useQuery(api.roadSegments.getAll);
   const updateStatus = useMutation(api.roadSegments.updateStatus);
   const removeRoad = useMutation(api.roadSegments.remove);
-  const bulkImport = useMutation(api.roadSegments.bulkImport);
 
   const handleStatusChange = async (
     id: Id<"roadSegments">,
