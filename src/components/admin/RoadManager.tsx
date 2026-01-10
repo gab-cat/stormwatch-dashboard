@@ -4,6 +4,11 @@ import { api } from "../../../convex/_generated/api";
 import { Navigation, Trash2, Upload, CheckCircle, AlertTriangle, ChevronRight } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { Card, CardContent } from "../ui/card";
+import { Button } from "../ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Label } from "../ui/label";
 
 export default function RoadManager() {
   const [statusFilter, setStatusFilter] = useState<"clear" | "risk" | "flooded" | undefined>(undefined);
@@ -76,167 +81,165 @@ export default function RoadManager() {
             <h1 className="text-3xl font-bold mb-2">Road Network Management</h1>
             <p className="text-gray-400">Manage road segments and their flood status</p>
           </div>
-          <button
-            onClick={handleImport}
-            disabled={importing}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Upload className="w-5 h-5" />
+          <Button onClick={handleImport} disabled={importing}>
+            <Upload className="w-5 h-5 mr-2" />
             {importing ? "Importing..." : "Import from OSM"}
-          </button>
+          </Button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-8">
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-400 mb-2">
-              <Navigation className="w-4 h-4" />
-              <span className="text-sm font-medium">Total Roads</span>
-            </div>
-            <span className="text-2xl font-bold">{allSegments.length}</span>
-          </div>
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-emerald-400 mb-2">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">Clear</span>
-            </div>
-            <span className="text-2xl font-bold">
-              {allSegments.filter((r) => r.status === "clear").length}
-            </span>
-          </div>
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-orange-400 mb-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">At Risk</span>
-            </div>
-            <span className="text-2xl font-bold">
-              {allSegments.filter((r) => r.status === "risk").length}
-            </span>
-          </div>
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-red-400 mb-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">Flooded</span>
-            </div>
-            <span className="text-2xl font-bold">
-              {allSegments.filter((r) => r.status === "flooded").length}
-            </span>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Navigation className="w-4 h-4" />
+                <span className="text-sm font-medium">Total Roads</span>
+              </div>
+              <span className="text-2xl font-bold">{allSegments.length}</span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-emerald-400 mb-2">
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">Clear</span>
+              </div>
+              <span className="text-2xl font-bold">
+                {allSegments.filter((r) => r.status === "clear").length}
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-orange-400 mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">At Risk</span>
+              </div>
+              <span className="text-2xl font-bold">
+                {allSegments.filter((r) => r.status === "risk").length}
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-red-400 mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">Flooded</span>
+              </div>
+              <span className="text-2xl font-bold">
+                {allSegments.filter((r) => r.status === "flooded").length}
+              </span>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filter */}
         <div className="mb-4 flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-400">Filter by Status:</label>
-          <select
+          <Label>Filter by Status:</Label>
+          <Select
             value={statusFilter || "all"}
-            onChange={(e) =>
+            onValueChange={(value) =>
               setStatusFilter(
-                e.target.value === "all" ? undefined : (e.target.value as "clear" | "risk" | "flooded")
+                value === "all" ? undefined : (value as "clear" | "risk" | "flooded")
               )
             }
-            className="px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-600"
           >
-            <option value="all">All Statuses</option>
-            <option value="clear">Clear</option>
-            <option value="risk">At Risk</option>
-            <option value="flooded">Flooded</option>
-          </select>
-          <span className="text-sm text-gray-400">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="clear">Clear</SelectItem>
+              <SelectItem value="risk">At Risk</SelectItem>
+              <SelectItem value="flooded">Flooded</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
             Showing {roadSegments.length} road{roadSegments.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         {/* Roads Table */}
-        <div className="bg-dark-800 border border-dark-700 rounded-xl overflow-hidden">
+        <Card>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-dark-700 border-b border-dark-600">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Road Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Updated
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dark-700">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Road Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {roadSegments.map((road) => (
-                  <tr key={road._id} className="hover:bg-dark-700/50 transition-colors">
-                    <td className="px-6 py-4">
+                  <TableRow key={road._id}>
+                    <TableCell>
                       <div className="font-medium">{road.name}</div>
                       {road.osmId && (
-                        <div className="text-sm text-gray-400">OSM: {road.osmId}</div>
+                        <div className="text-sm text-muted-foreground">OSM: {road.osmId}</div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-gray-300">
+                    </TableCell>
+                    <TableCell>
                       {road.roadType || "unknown"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <select
+                    </TableCell>
+                    <TableCell>
+                      <Select
                         value={road.status}
-                        onChange={(e) =>
+                        onValueChange={(value) =>
                           handleStatusChange(
                             road._id,
-                            e.target.value as "clear" | "risk" | "flooded"
+                            value as "clear" | "risk" | "flooded"
                           )
                         }
-                        className={cn(
-                          "px-3 py-1 rounded-lg text-xs font-medium border bg-transparent",
-                          getStatusColor(road.status)
-                        )}
                       >
-                        <option value="clear">Clear</option>
-                        <option value="risk">At Risk</option>
-                        <option value="flooded">Flooded</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 text-gray-400 text-sm">
+                        <SelectTrigger className={cn("w-[140px] border", getStatusColor(road.status))}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clear">Clear</SelectItem>
+                          <SelectItem value="risk">At Risk</SelectItem>
+                          <SelectItem value="flooded">Flooded</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
                       {new Date(road.updatedAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDelete(road._id)}
-                        className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-        </div>
+        </Card>
 
         {/* Pagination Controls */}
         <div className="mt-6 flex items-center justify-center gap-4">
           {status === "CanLoadMore" && (
-            <button
-              onClick={() => loadMore(50)}
-              className="flex items-center gap-2 px-6 py-2 bg-brand-600 hover:bg-brand-700 rounded-lg font-medium transition-colors"
-            >
+            <Button onClick={() => loadMore(50)}>
               Load More
-              <ChevronRight className="w-4 h-4" />
-            </button>
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
           )}
           {status === "LoadingMore" && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-foreground"></div>
               <span>Loading more...</span>
             </div>
           )}
           {status === "Exhausted" && (
-            <span className="text-sm text-gray-400">All roads loaded</span>
+            <span className="text-sm text-muted-foreground">All roads loaded</span>
           )}
         </div>
       </div>
