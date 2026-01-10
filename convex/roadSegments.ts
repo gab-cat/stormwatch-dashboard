@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { PaginationResult } from "convex/server";
+import { getSeverityFromHeight } from "./predictions";
 
 /**
  * Calculate grid cell ID from coordinates (0.01 degree precision ~1km)
@@ -150,6 +151,93 @@ export const getByViewport = query({
     }
 
     return Array.from(uniqueRoads.values());
+  },
+});
+
+/**
+ * Get road segments for specific grid cells
+ * Used for incremental loading - only fetches missing cells
+ */
+export const getByGridCells = query({
+  args: {
+    gridCells: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.gridCells.length === 0) {
+      return { segments: [], cells: [] };
+    }
+
+    // Fetch segments for each requested grid cell
+    const results = await Promise.all(
+      args.gridCells.map((cell) =>
+        ctx.db
+          .query("roadSegments")
+          .withIndex("by_gridCell", (q) => q.eq("gridCell", cell))
+          .collect()
+      )
+    );
+
+    // Flatten and deduplicate by ID (segments may span multiple cells)
+    const allSegments = results.flat();
+    const uniqueSegments = new Map();
+    
+    for (const segment of allSegments) {
+      if (!uniqueSegments.has(segment._id)) {
+        uniqueSegments.set(segment._id, segment);
+      }
+    }
+
+    return {
+      segments: Array.from(uniqueSegments.values()),
+      cells: args.gridCells,
+    };
+  },
+});
+
+/**
+ * Get updated segments for specific grid cells since a timestamp
+ * Used for real-time updates - checks for changes in loaded cells
+ */
+export const getUpdatesForCells = query({
+  args: {
+    gridCells: v.array(v.string()),
+    sinceTimestamp: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    if (args.gridCells.length === 0) {
+      return { segments: [], cells: [] };
+    }
+
+    // Fetch segments for each requested grid cell
+    const results = await Promise.all(
+      args.gridCells.map((cell) =>
+        ctx.db
+          .query("roadSegments")
+          .withIndex("by_gridCell", (q) => q.eq("gridCell", cell))
+          .collect()
+      )
+    );
+
+    // Filter by timestamp if provided
+    let allSegments = results.flat();
+    if (args.sinceTimestamp !== undefined) {
+      allSegments = allSegments.filter(
+        (seg) => seg.updatedAt > args.sinceTimestamp!
+      );
+    }
+
+    // Deduplicate by ID
+    const uniqueSegments = new Map();
+    for (const segment of allSegments) {
+      if (!uniqueSegments.has(segment._id)) {
+        uniqueSegments.set(segment._id, segment);
+      }
+    }
+
+    return {
+      segments: Array.from(uniqueSegments.values()),
+      cells: args.gridCells,
+    };
   },
 });
 
@@ -418,6 +506,267 @@ export const migrateSpatialFields = mutation({
       processed: paginationResult.page.length,
       continueCursor: paginationResult.continueCursor,
       isDone: paginationResult.isDone,
+    };
+  },
+});
+
+/**
+ * Calculate Haversine distance between two points in meters
+ */
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000; // Earth radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Check if a road segment is within a radius of a point
+ * Returns true if any coordinate of the road is within the radius
+ */
+function isRoadWithinRadius(
+  roadCoordinates: number[][],
+  centerLat: number,
+  centerLng: number,
+  radiusMeters: number
+): boolean {
+  // Check if any point of the road is within radius
+  for (const coord of roadCoordinates) {
+    const distance = haversineDistance(centerLat, centerLng, coord[0], coord[1]);
+    if (distance <= radiusMeters) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Get road segments within a radius of a point
+ * Uses efficient grid-cell indexing for spatial queries
+ */
+export const getRoadsWithinRadius = query({
+  args: {
+    lat: v.number(),
+    lng: v.number(),
+    radiusMeters: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Calculate bounding box around the point with radius
+    // Approximate: 1 degree latitude ≈ 111km, 1 degree longitude ≈ 111km * cos(latitude)
+    const latDegrees = args.radiusMeters / 111000;
+    const lngDegrees = args.radiusMeters / (111000 * Math.cos((args.lat * Math.PI) / 180));
+    
+    const bounds = {
+      minLat: args.lat - latDegrees,
+      maxLat: args.lat + latDegrees,
+      minLng: args.lng - lngDegrees,
+      maxLng: args.lng + lngDegrees,
+    };
+
+    // Get grid cells that intersect with bounding box
+    const gridCells = calculateGridCells(bounds);
+
+    // Fetch roads from each visible grid cell (indexed query - efficient)
+    const results = await Promise.all(
+      gridCells.map((cell) =>
+        ctx.db
+          .query("roadSegments")
+          .withIndex("by_gridCell", (q) => q.eq("gridCell", cell))
+          .collect()
+      )
+    );
+
+    // Flatten and filter to ensure roads actually intersect with bounding box
+    const allRoads = results.flat();
+    const uniqueRoads = new Map();
+    
+    for (const road of allRoads) {
+      // Check if road bounding box intersects with our bounding box
+      if (
+        road.minLat !== undefined &&
+        road.maxLat !== undefined &&
+        road.minLng !== undefined &&
+        road.maxLng !== undefined
+      ) {
+        const intersects =
+          road.minLat <= bounds.maxLat &&
+          road.maxLat >= bounds.minLat &&
+          road.minLng <= bounds.maxLng &&
+          road.maxLng >= bounds.minLng;
+
+        if (intersects && !uniqueRoads.has(road._id)) {
+          // Check if road is actually within radius using Haversine distance
+          if (isRoadWithinRadius(road.coordinates, args.lat, args.lng, args.radiusMeters)) {
+            uniqueRoads.set(road._id, road);
+          }
+        }
+      }
+    }
+
+    return Array.from(uniqueRoads.values());
+  },
+});
+
+/**
+ * Update road statuses based on device predictions
+ * Maps severity to road status:
+ * - critical/high → flooded
+ * - medium → risk
+ * - low → clear
+ */
+export const updateStatusesFromDevicePrediction = mutation({
+  args: {
+    deviceId: v.id("iotDevices"),
+  },
+  returns: v.union(
+    v.object({
+      updated: v.number(),
+      message: v.string(),
+    }),
+    v.object({
+      updated: v.number(),
+      deviceId: v.id("iotDevices"),
+      deviceName: v.string(),
+      severity: v.union(
+        v.literal("low"),
+        v.literal("medium"),
+        v.literal("high"),
+        v.literal("critical")
+      ),
+      status: v.union(
+        v.literal("clear"),
+        v.literal("risk"),
+        v.literal("flooded")
+      ),
+    })
+  ),
+  handler: async (ctx, args) => {
+    // Get the device
+    const device = await ctx.db.get(args.deviceId);
+    if (!device) {
+      throw new Error("Device not found");
+    }
+
+    // Get latest predictions for this device
+    const predictions = await ctx.db
+      .query("predictions")
+      .withIndex("by_device", (q) => q.eq("deviceId", args.deviceId))
+      .collect();
+
+    if (predictions.length === 0) {
+      return { updated: 0, message: "No predictions found for device" };
+    }
+
+    // Find the highest severity prediction based on flood height
+    const now = Date.now();
+    const validPredictions = predictions.filter(p => p.validUntil >= now && p.predictedWaterLevel !== undefined);
+    
+    if (validPredictions.length === 0) {
+      return { updated: 0, message: "No valid predictions with water level data found" };
+    }
+
+    // Calculate severity from flood height for each prediction and find the maximum
+    const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+    let maxSeverity: "low" | "medium" | "high" | "critical" = "low";
+    let maxHeight = 0;
+
+    for (const pred of validPredictions) {
+      if (pred.predictedWaterLevel !== undefined) {
+        const severity = getSeverityFromHeight(pred.predictedWaterLevel);
+        if (severityOrder[severity] > severityOrder[maxSeverity]) {
+          maxSeverity = severity;
+          maxHeight = pred.predictedWaterLevel;
+        } else if (severityOrder[severity] === severityOrder[maxSeverity] && pred.predictedWaterLevel > maxHeight) {
+          maxHeight = pred.predictedWaterLevel;
+        }
+      }
+    }
+
+    // Map severity to road status
+    let targetStatus: "clear" | "risk" | "flooded";
+    if (maxSeverity === "critical" || maxSeverity === "high") {
+      targetStatus = "flooded";
+    } else if (maxSeverity === "medium") {
+      targetStatus = "risk";
+    } else {
+      targetStatus = "clear";
+    }
+
+    // Calculate bounding box around device location with radius
+    const [deviceLat, deviceLng] = device.location;
+    const latDegrees = device.influenceRadius / 111000;
+    const lngDegrees = device.influenceRadius / (111000 * Math.cos((deviceLat * Math.PI) / 180));
+    
+    const bounds = {
+      minLat: deviceLat - latDegrees,
+      maxLat: deviceLat + latDegrees,
+      minLng: deviceLng - lngDegrees,
+      maxLng: deviceLng + lngDegrees,
+    };
+
+    // Get grid cells that intersect with bounding box
+    const gridCells = calculateGridCells(bounds);
+
+    // Fetch roads from each visible grid cell (indexed query - efficient)
+    const results = await Promise.all(
+      gridCells.map((cell) =>
+        ctx.db
+          .query("roadSegments")
+          .withIndex("by_gridCell", (q) => q.eq("gridCell", cell))
+          .collect()
+      )
+    );
+
+    // Flatten and filter to roads actually within radius
+    const allRoads = results.flat();
+    const uniqueRoads = new Map();
+    
+    for (const road of allRoads) {
+      // Check if road bounding box intersects with our bounding box
+      if (
+        road.minLat !== undefined &&
+        road.maxLat !== undefined &&
+        road.minLng !== undefined &&
+        road.maxLng !== undefined
+      ) {
+        const intersects =
+          road.minLat <= bounds.maxLat &&
+          road.maxLat >= bounds.minLat &&
+          road.minLng <= bounds.maxLng &&
+          road.maxLng >= bounds.minLng;
+
+        if (intersects && !uniqueRoads.has(road._id)) {
+          // Check if road is actually within radius using Haversine distance
+          if (isRoadWithinRadius(road.coordinates, deviceLat, deviceLng, device.influenceRadius)) {
+            uniqueRoads.set(road._id, road);
+          }
+        }
+      }
+    }
+
+    // Update road statuses
+    let updated = 0;
+    for (const road of uniqueRoads.values()) {
+      await ctx.db.patch(road._id, {
+        status: targetStatus,
+        updatedAt: Date.now(),
+      });
+      updated++;
+    }
+
+    return {
+      updated,
+      deviceId: args.deviceId,
+      deviceName: device.name,
+      severity: maxSeverity,
+      status: targetStatus,
     };
   },
 });
