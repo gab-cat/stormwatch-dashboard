@@ -12,11 +12,19 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { Card, CardContent, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Badge } from "../ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
+import { Label } from "../ui/label";
 
 export default function AlertManager() {
   const alerts = useQuery(api.alerts.getAll);
   const activeAlerts = useQuery(api.alerts.getActive);
-  const zones = useQuery(api.zones.getAll);
+  const devices = useQuery(api.devices.getAll);
   const createAlert = useMutation(api.alerts.create);
   const updateStatus = useMutation(api.alerts.updateStatus);
   const removeAlert = useMutation(api.alerts.remove);
@@ -29,9 +37,9 @@ export default function AlertManager() {
   });
 
   const handleCreate = async () => {
-    // Get all zones for now (in production, allow selection)
-    if (!zones || zones.length === 0) {
-      alert("Please create flood zones first.");
+    // Get all devices for now (in production, allow selection)
+    if (!devices || devices.length === 0) {
+      alert("Please create devices first.");
       return;
     }
 
@@ -39,7 +47,7 @@ export default function AlertManager() {
       title: formData.title,
       message: formData.message,
       severity: formData.severity,
-      affectedZoneIds: zones.map((z) => z._id),
+      affectedDeviceIds: devices.map((d) => d._id),
       isActive: true,
     });
     setShowAddModal(false);
@@ -99,42 +107,45 @@ export default function AlertManager() {
             <h1 className="text-3xl font-bold mb-2">Alert Management</h1>
             <p className="text-gray-400">Manage flood warnings and alerts</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 rounded-lg font-medium transition-colors"
-          >
-            <Plus className="w-5 h-5" />
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="w-5 h-5 mr-2" />
             Create Alert
-          </button>
+          </Button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-400 mb-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">Total Alerts</span>
-            </div>
-            <span className="text-2xl font-bold">{alerts.length}</span>
-          </div>
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-green-400 mb-2">
-              <ToggleRight className="w-4 h-4" />
-              <span className="text-sm font-medium">Active</span>
-            </div>
-            <span className="text-2xl font-bold">
-              {activeAlerts?.length || 0}
-            </span>
-          </div>
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-red-400 mb-2">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">Critical</span>
-            </div>
-            <span className="text-2xl font-bold">
-              {alerts.filter((a) => a.severity === "critical").length}
-            </span>
-          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">Total Alerts</span>
+              </div>
+              <span className="text-2xl font-bold">{alerts.length}</span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-green-400 mb-2">
+                <ToggleRight className="w-4 h-4" />
+                <span className="text-sm font-medium">Active</span>
+              </div>
+              <span className="text-2xl font-bold">
+                {activeAlerts?.length || 0}
+              </span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-red-400 mb-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">Critical</span>
+              </div>
+              <span className="text-2xl font-bold">
+                {alerts.filter((a) => a.severity === "critical").length}
+              </span>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Alerts List */}
@@ -142,75 +153,81 @@ export default function AlertManager() {
           {alerts.map((alert) => {
             const Icon = getSeverityIcon(alert.severity);
             return (
-              <div
+              <Card
                 key={alert._id}
                 className={cn(
-                  "bg-dark-800 border rounded-xl p-6",
                   alert.isActive
-                    ? getSeverityColor(alert.severity).split(" ")[0] +
-                        " border-opacity-50"
-                    : "border-dark-700 opacity-60"
+                    ? (() => {
+                        const colors = getSeverityColor(alert.severity).split(" ");
+                        const bgColor = colors[0];
+                        const borderColor = colors[2]?.replace("/20", "/10") || "border-border/50";
+                        return `${bgColor} ${borderColor}`;
+                      })()
+                    : "opacity-60"
                 )}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div
-                      className={cn(
-                        "p-3 rounded-lg",
-                        getSeverityColor(alert.severity).split(" ")[0]
-                      )}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-bold text-lg">{alert.title}</h3>
-                        <span
-                          className={cn(
-                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-                            getSeverityColor(alert.severity)
-                          )}
-                        >
-                          {alert.severity.toUpperCase()}
-                        </span>
-                      </div>
-                      <p className="text-gray-300 mb-4">{alert.message}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <span>
-                          Zones: {alert.affectedZoneIds.length}
-                        </span>
-                        <span>
-                          Created: {new Date(alert.createdAt).toLocaleString()}
-                        </span>
-                        {alert.expiresAt && (
-                          <span>
-                            Expires: {new Date(alert.expiresAt).toLocaleString()}
-                          </span>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div
+                        className={cn(
+                          "p-3 rounded-lg",
+                          getSeverityColor(alert.severity).split(" ")[0]
                         )}
+                      >
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <CardTitle className="text-lg">{alert.title}</CardTitle>
+                          <Badge
+                            variant="outline"
+                            className={getSeverityColor(alert.severity)}
+                          >
+                            {alert.severity.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mb-4">{alert.message}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>
+                            Devices: {alert.affectedDeviceIds.length}
+                          </span>
+                          <span>
+                            Created: {new Date(alert.createdAt).toLocaleString()}
+                          </span>
+                          {alert.expiresAt && (
+                            <span>
+                              Expires: {new Date(alert.expiresAt).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggle(alert._id, alert.isActive)}
+                        title={alert.isActive ? "Deactivate" : "Activate"}
+                      >
+                        {alert.isActive ? (
+                          <ToggleRight className="w-5 h-5 text-green-400" />
+                        ) : (
+                          <ToggleLeft className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(alert._id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggle(alert._id, alert.isActive)}
-                      className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
-                      title={alert.isActive ? "Deactivate" : "Activate"}
-                    >
-                      {alert.isActive ? (
-                        <ToggleRight className="w-5 h-5 text-green-400" />
-                      ) : (
-                        <ToggleLeft className="w-5 h-5 text-gray-500" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(alert._id)}
-                      className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -224,71 +241,71 @@ export default function AlertManager() {
       </div>
 
       {/* Add Alert Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Create New Alert</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white"
-                  placeholder="Alert title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Message</label>
-                <textarea
-                  value={formData.message}
-                  onChange={(e) =>
-                    setFormData({ ...formData, message: e.target.value })
-                  }
-                  className="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white"
-                  rows={4}
-                  placeholder="Alert message..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Severity</label>
-                <select
-                  value={formData.severity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      severity: e.target.value as typeof formData.severity,
-                    })
-                  }
-                  className="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white"
-                >
-                  <option value="info">Info</option>
-                  <option value="warning">Warning</option>
-                  <option value="danger">Danger</option>
-                  <option value="critical">Critical</option>
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreate}
-                  className="flex-1 px-4 py-2 bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
-                >
-                  Create
-                </button>
-              </div>
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Alert</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+                placeholder="Alert title"
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
+                value={formData.message}
+                onChange={(e) =>
+                  setFormData({ ...formData, message: e.target.value })
+                }
+                rows={4}
+                placeholder="Alert message..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="severity">Severity</Label>
+              <Select
+                value={formData.severity}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    severity: value as typeof formData.severity,
+                  })
+                }
+              >
+                <SelectTrigger id="severity">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="danger">Danger</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate}>
+                Create
+              </Button>
+            </DialogFooter>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
