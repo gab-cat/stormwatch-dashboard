@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Book,
@@ -8,11 +8,16 @@ import {
   Heart,
   CheckCircle,
   AlertCircle,
-  Copy,
   ArrowLeft,
-  CloudRain,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { Logo } from "../ui/logo";
+import { Button, buttonVariants } from "../ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { Separator } from "../ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import { CodeBlock } from "./CodeBlock";
 
 type CodeExample = {
   language: string;
@@ -20,12 +25,15 @@ type CodeExample = {
   code: string;
 };
 
+// Get API URL from environment variable, with fallback
+const API_URL = import.meta.env.VITE_API_URL || "https://your-convex-site.convex.site";
+
 const codeExamples: Record<string, CodeExample[]> = {
   register: [
     {
       language: "curl",
       label: "cURL",
-      code: `curl -X POST https://your-convex-site.convex.site/api/devices/register \\
+      code: `curl -X POST ${API_URL}/api/devices/register \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Sensor-001",
@@ -40,7 +48,7 @@ const codeExamples: Record<string, CodeExample[]> = {
       label: "Python",
       code: `import requests
 
-url = "https://your-convex-site.convex.site/api/devices/register"
+url = "${API_URL}/api/devices/register"
 payload = {
     "name": "Sensor-001",
     "type": "water_level",
@@ -61,7 +69,7 @@ else:
     {
       language: "javascript",
       label: "Node.js",
-      code: `const response = await fetch('https://your-convex-site.convex.site/api/devices/register', {
+      code: `const response = await fetch('${API_URL}/api/devices/register', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -89,7 +97,7 @@ if (response.ok) {
     {
       language: "curl",
       label: "cURL",
-      code: `curl -X POST https://your-convex-site.convex.site/api/readings \\
+      code: `curl -X POST ${API_URL}/api/readings \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{
@@ -112,7 +120,7 @@ if (response.ok) {
 
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
-const char* apiUrl = "https://your-convex-site.convex.site/api/readings";
+const char* apiUrl = "${API_URL}/api/readings";
 const char* apiKey = "YOUR_API_KEY";
 
 void setup() {
@@ -185,7 +193,7 @@ from machine import Pin, ADC
 # WiFi Configuration
 WIFI_SSID = "YOUR_WIFI_SSID"
 WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
-API_URL = "https://your-convex-site.convex.site/api/readings"
+API_URL = "${API_URL}/api/readings"
 API_KEY = "YOUR_API_KEY"
 
 # Connect to WiFi
@@ -250,7 +258,7 @@ while True:
 import time
 from datetime import datetime
 
-API_URL = "https://your-convex-site.convex.site/api/readings"
+API_URL = "${API_URL}/api/readings"
 API_KEY = "YOUR_API_KEY"
 
 def read_sensor():
@@ -299,7 +307,7 @@ if __name__ == "__main__":
       label: "Node.js",
       code: `const fetch = require('node-fetch'); // For Node.js < 18, or use built-in fetch in Node.js 18+
 
-const API_URL = 'https://your-convex-site.convex.site/api/readings';
+const API_URL = '${API_URL}/api/readings';
 const API_KEY = 'YOUR_API_KEY';
 
 async function readSensor() {
@@ -353,7 +361,7 @@ submitReading(); // Submit immediately`,
     {
       language: "curl",
       label: "cURL",
-      code: `curl -X POST https://your-convex-site.convex.site/api/devices/heartbeat \\
+      code: `curl -X POST ${API_URL}/api/devices/heartbeat \\
   -H "Authorization: Bearer YOUR_API_KEY"`,
     },
     {
@@ -362,7 +370,7 @@ submitReading(); // Submit immediately`,
       code: `import requests
 import time
 
-API_URL = "https://your-convex-site.convex.site/api/devices/heartbeat"
+API_URL = "${API_URL}/api/devices/heartbeat"
 API_KEY = "YOUR_API_KEY"
 
 def send_heartbeat():
@@ -390,7 +398,7 @@ while True:
       code: `#include <WiFi.h>
 #include <HTTPClient.h>
 
-const char* apiUrl = "https://your-convex-site.convex.site/api/devices/heartbeat";
+const char* apiUrl = "${API_URL}/api/devices/heartbeat";
 const char* apiKey = "YOUR_API_KEY";
 
 void sendHeartbeat() {
@@ -418,70 +426,42 @@ void loop() {
   ],
 };
 
-function CodeBlock({ code, language }: { code: string; language: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative group">
-      <button
-        onClick={handleCopy}
-        className="absolute top-4 right-4 p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-        title="Copy code"
-      >
-        {copied ? (
-          <CheckCircle className="w-4 h-4 text-green-400" />
-        ) : (
-          <Copy className="w-4 h-4" />
-        )}
-      </button>
-      <pre className="bg-dark-900 border border-dark-700 rounded-lg p-4 overflow-x-auto">
-        <code className={`language-${language}`}>{code}</code>
-      </pre>
-    </div>
-  );
-}
 
 function CodeExamples({ examples }: { examples: CodeExample[] }) {
-  const [activeTab, setActiveTab] = useState(0);
-
   if (examples.length === 0) return null;
 
+  const defaultTab = examples[0]?.label.toLowerCase().replace(/\s+/g, "-") || "0";
+
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-4">
-        <Code className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-300">Code Examples</span>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Code className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-foreground">Code Examples</span>
       </div>
       
-      {/* Tabs */}
-      <div className="flex gap-2 mb-4 border-b border-dark-700 overflow-x-auto">
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+          {examples.map((example, idx) => (
+            <TabsTrigger
+              key={idx}
+              value={example.label.toLowerCase().replace(/\s+/g, "-")}
+              className="text-xs"
+            >
+              {example.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
         {examples.map((example, idx) => (
-          <button
+          <TabsContent
             key={idx}
-            onClick={() => setActiveTab(idx)}
-            className={cn(
-              "px-4 py-2 text-sm transition-colors whitespace-nowrap",
-              activeTab === idx
-                ? "text-white border-b-2 border-brand-600"
-                : "text-gray-400 hover:text-gray-300"
-            )}
+            value={example.label.toLowerCase().replace(/\s+/g, "-")}
+            className="mt-4"
           >
-            {example.label}
-          </button>
+            <CodeBlock code={example.code} language={example.language} />
+          </TabsContent>
         ))}
-      </div>
-
-      {/* Active Tab Content */}
-      <CodeBlock
-        code={examples[activeTab].code}
-        language={examples[activeTab].language}
-      />
+      </Tabs>
     </div>
   );
 }
@@ -490,13 +470,35 @@ export default function DocsPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const sections = [
-    { id: "quickstart", title: "Quick Start" },
-    { id: "authentication", title: "Authentication" },
-    { id: "register-device", title: "Register Device" },
-    { id: "submit-reading", title: "Submit Reading" },
-    { id: "heartbeat", title: "Device Heartbeat" },
-    { id: "error-handling", title: "Error Handling" },
+    { id: "quickstart", title: "Quick Start", icon: CheckCircle },
+    { id: "authentication", title: "Authentication", icon: Key },
+    { id: "register-device", title: "Register Device", icon: Send },
+    { id: "submit-reading", title: "Submit Reading", icon: Send },
+    { id: "heartbeat", title: "Device Heartbeat", icon: Heart },
+    { id: "error-handling", title: "Error Handling", icon: AlertCircle },
   ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 150;
+      
+      for (const section of sections) {
+        const element = document.getElementById(section.id);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(section.id);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Check initial position
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -507,237 +509,287 @@ export default function DocsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-dark-700 bg-dark-800 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link
-                to="/"
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-              >
-                <div className="p-2 bg-brand-600 rounded-lg">
-                  <CloudRain className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-semibold">StormWatch</span>
-              </Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-300">API Documentation</span>
-            </div>
+      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             <Link
               to="/"
-              className="flex items-center gap-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <Logo subtitle="API Documentation" size="md" />
+            </Link>
+            <Link
+              to="/"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "flex items-center gap-2"
+              )}
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Navigation */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24">
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6">
-                <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-                  <Book className="w-5 h-5" />
-                  Contents
-                </h2>
-                <nav className="space-y-2">
-                  {sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => scrollToSection(section.id)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-lg transition-colors text-sm",
-                        activeSection === section.id
-                          ? "bg-brand-600 text-white"
-                          : "text-gray-300 hover:bg-dark-700 hover:text-white"
-                      )}
-                    >
-                      {section.title}
-                    </button>
-                  ))}
-                </nav>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Book className="w-4 h-4" />
+                    Contents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <nav className="space-y-1">
+                    {sections.map((section) => {
+                      const Icon = section.icon;
+                      const isActive = activeSection === section.id;
+                      return (
+                        <Button
+                          key={section.id}
+                          variant={isActive ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => scrollToSection(section.id)}
+                          className={cn(
+                            "w-full justify-start text-xs",
+                            isActive && "bg-primary text-primary-foreground"
+                          )}
+                        >
+                          <Icon className="w-3.5 h-3.5 mr-2" />
+                          {section.title}
+                        </Button>
+                      );
+                    })}
+                  </nav>
+                </CardContent>
+              </Card>
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-3 space-y-12">
+          <main className="lg:col-span-3 space-y-8">
             {/* Introduction */}
-            <section>
-              <h1 className="text-4xl font-semibold mb-4">IoT Device Integration Guide</h1>
-              <p className="text-xl text-gray-400 mb-6">
+            <section className="space-y-4">
+              <h1 className="text-4xl font-bold tracking-tight">IoT Device Integration Guide</h1>
+              <p className="text-xl text-muted-foreground">
                 Learn how to connect your IoT sensors to StormWatch and start sending
                 real-time flood monitoring data.
               </p>
             </section>
 
+            <Separator />
+
             {/* Quick Start */}
             <section id="quickstart" className="scroll-mt-24">
-              <h2 className="text-3xl font-semibold mb-4 flex items-center gap-2">
-                <CheckCircle className="w-6 h-6 text-green-400" />
-                Quick Start
-              </h2>
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center font-bold">
-                      1
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    Quick Start
+                  </CardTitle>
+                  <CardDescription>
+                    Get started with StormWatch in three simple steps
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold text-primary-foreground text-sm">
+                        1
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h3 className="font-semibold text-sm">Register Your Device</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Create a device entry via the{" "}
+                          <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                            /api/devices/register
+                          </code>{" "}
+                          endpoint. You'll receive an API key - save it securely!
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium mb-1">Register Your Device</h3>
-                      <p className="text-gray-400 text-sm">
-                        Create a device entry via the{" "}
-                        <code className="px-1.5 py-0.5 bg-dark-700 rounded text-sm">
-                          /api/devices/register
-                        </code>{" "}
-                        endpoint. You'll receive an API key - save it securely!
-                      </p>
+                    <Separator />
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold text-primary-foreground text-sm">
+                        2
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h3 className="font-semibold text-sm">Authenticate Requests</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Include your API key in the{" "}
+                          <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                            Authorization: Bearer YOUR_API_KEY
+                          </code>{" "}
+                          header for all API requests.
+                        </p>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center font-bold text-primary-foreground text-sm">
+                        3
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h3 className="font-semibold text-sm">Start Sending Readings</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Submit sensor readings using{" "}
+                          <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                            /api/readings
+                          </code>
+                          . Readings are stored and can trigger flood alerts.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center font-bold">
-                      2
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1">Authenticate Requests</h3>
-                      <p className="text-gray-400 text-sm">
-                        Include your API key in the{" "}
-                        <code className="px-1.5 py-0.5 bg-dark-700 rounded text-sm">
-                          Authorization: Bearer YOUR_API_KEY
-                        </code>{" "}
-                        header for all API requests.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center font-bold">
-                      3
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1">Start Sending Readings</h3>
-                      <p className="text-gray-400 text-sm">
-                        Submit sensor readings using{" "}
-                        <code className="px-1.5 py-0.5 bg-dark-700 rounded text-sm">
-                          /api/readings
-                        </code>
-                        . Readings are stored and can trigger flood alerts.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </section>
 
             {/* Authentication */}
             <section id="authentication" className="scroll-mt-24">
-              <h2 className="text-3xl font-semibold mb-4 flex items-center gap-2">
-                <Key className="w-6 h-6 text-yellow-400" />
-                Authentication
-              </h2>
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 space-y-4">
-                <p className="text-gray-300">
-                  All API requests (except device registration) require authentication
-                  using a Bearer token in the Authorization header.
-                </p>
-                <div className="bg-dark-900 border border-dark-700 rounded-lg p-4">
-                  <code className="text-sm">
-                    Authorization: Bearer YOUR_API_KEY
-                  </code>
-                </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-yellow-400 mb-1">
-                        Security Best Practices
-                      </h4>
-                      <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
-                        <li>Never commit API keys to version control</li>
-                        <li>Store API keys securely (environment variables, secure storage)</li>
-                        <li>Regenerate API keys if compromised</li>
-                        <li>Use HTTPS for all API requests</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Key className="w-6 h-6 text-yellow-500" />
+                    Authentication
+                  </CardTitle>
+                  <CardDescription>
+                    Secure your API requests with Bearer token authentication
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-foreground">
+                    All API requests (except device registration) require authentication
+                    using a Bearer token in the Authorization header.
+                  </p>
+                  <CodeBlock 
+                    code="Authorization: Bearer YOUR_API_KEY" 
+                    language="text" 
+                  />
+                  <Card className="bg-yellow-500/10 border-yellow-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-sm text-yellow-500">
+                            Security Best Practices
+                          </h4>
+                          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                            <li>Never commit API keys to version control</li>
+                            <li>Store API keys securely (environment variables, secure storage)</li>
+                            <li>Regenerate API keys if compromised</li>
+                            <li>Use HTTPS for all API requests</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CardContent>
+              </Card>
             </section>
 
             {/* Register Device */}
             <section id="register-device" className="scroll-mt-24">
-              <h2 className="text-3xl font-semibold mb-4 flex items-center gap-2">
-                <Send className="w-6 h-6 text-blue-400" />
-                Register Device
-              </h2>
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 space-y-6">
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Endpoint</h3>
-                  <code className="text-lg bg-dark-900 border border-dark-700 rounded-lg px-4 py-2 block">
-                    POST /api/devices/register
-                  </code>
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Send className="w-6 h-6 text-blue-500" />
+                    Register Device
+                  </CardTitle>
+                  <CardDescription>
+                    Create a new device entry and receive your API key
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-semibold">Endpoint</h3>
+                      <Badge variant="secondary">POST</Badge>
+                    </div>
+                    <CodeBlock 
+                      code="/api/devices/register" 
+                      language="text" 
+                    />
+                  </div>
 
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Request Body</h3>
-                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 overflow-x-auto">
-                    <pre className="text-sm">
-                      <code>{`{
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Request Body</h3>
+                    <CodeBlock 
+                      code={`{
   "name": "string",           // Device name/identifier
   "type": "water_level" | "rain_gauge" | "flow_meter" | "multi_sensor",
   "capabilities": ["string"],  // Array of sensor capabilities
   "owner": "string",          // Owner/organization name
   "location": [lat, lng],     // [latitude, longitude]
   "metadata": {}              // Optional: Additional device data
-}`}</code>
-                    </pre>
+}`}
+                      language="json"
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Response</h3>
-                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 overflow-x-auto">
-                    <pre className="text-sm">
-                      <code>{`{
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Response</h3>
+                    <CodeBlock 
+                      code={`{
   "success": true,
   "deviceId": "j7k8l9m0...",
   "apiKey": "sk_1234567890_abc..."  // Save this!
-}`}</code>
-                    </pre>
+}`}
+                      language="json"
+                    />
                   </div>
-                </div>
 
-                <CodeExamples examples={codeExamples.register} />
-              </div>
+                  <Separator />
+
+                  <CodeExamples examples={codeExamples.register} />
+                </CardContent>
+              </Card>
             </section>
 
             {/* Submit Reading */}
             <section id="submit-reading" className="scroll-mt-24">
-              <h2 className="text-3xl font-semibold mb-4 flex items-center gap-2">
-                <Send className="w-6 h-6 text-green-400" />
-                Submit Reading
-              </h2>
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 space-y-6">
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Endpoint</h3>
-                  <code className="text-lg bg-dark-900 border border-dark-700 rounded-lg px-4 py-2 block">
-                    POST /api/readings
-                  </code>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Requires: Authorization header with API key
-                  </p>
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Send className="w-6 h-6 text-green-500" />
+                    Submit Reading
+                  </CardTitle>
+                  <CardDescription>
+                    Send sensor readings to StormWatch for monitoring and alerts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-semibold">Endpoint</h3>
+                      <Badge variant="secondary">POST</Badge>
+                    </div>
+                    <CodeBlock 
+                      code="/api/readings" 
+                      language="text" 
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Requires: Authorization header with API key
+                    </p>
+                  </div>
 
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Request Body</h3>
-                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 overflow-x-auto">
-                    <pre className="text-sm">
-                      <code>{`{
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Request Body</h3>
+                    <CodeBlock 
+                      code={`{
   "readingType": "water_level" | "rainfall" | "flow_rate" | "temperature" | "humidity",
   "value": 45.5,              // Numeric reading value
   "unit": "cm",               // Unit of measurement
@@ -746,116 +798,161 @@ export default function DocsPage() {
     "battery": 85,
     "signal_strength": -65
   }
-}`}</code>
-                    </pre>
+}`}
+                      language="json"
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Response</h3>
-                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 overflow-x-auto">
-                    <pre className="text-sm">
-                      <code>{`{
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Response</h3>
+                    <CodeBlock 
+                      code={`{
   "success": true,
   "readingId": "a1b2c3d4...",
   "deviceId": "j7k8l9m0..."
-}`}</code>
-                    </pre>
+}`}
+                      language="json"
+                    />
                   </div>
-                </div>
 
-                <CodeExamples examples={codeExamples.submitReading} />
-              </div>
+                  <Separator />
+
+                  <CodeExamples examples={codeExamples.submitReading} />
+                </CardContent>
+              </Card>
             </section>
 
             {/* Heartbeat */}
             <section id="heartbeat" className="scroll-mt-24">
-              <h2 className="text-3xl font-semibold mb-4 flex items-center gap-2">
-                <Heart className="w-6 h-6 text-red-400" />
-                Device Heartbeat
-              </h2>
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 space-y-6">
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Endpoint</h3>
-                  <code className="text-lg bg-dark-900 border border-dark-700 rounded-lg px-4 py-2 block">
-                    POST /api/devices/heartbeat
-                  </code>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Updates device's "last seen" timestamp and marks it as online.
-                  </p>
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Heart className="w-6 h-6 text-red-500" />
+                    Device Heartbeat
+                  </CardTitle>
+                  <CardDescription>
+                    Keep your device status updated with periodic heartbeats
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-semibold">Endpoint</h3>
+                      <Badge variant="secondary">POST</Badge>
+                    </div>
+                    <CodeBlock 
+                      code="/api/devices/heartbeat" 
+                      language="text" 
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Updates device's "last seen" timestamp and marks it as online.
+                    </p>
+                  </div>
 
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Request</h3>
-                  <p className="text-gray-300 mb-2">
-                    No request body required. Only requires Authorization header.
-                  </p>
-                </div>
+                  <Separator />
 
-                <div>
-                  <h3 className="text-xl font-medium mb-2">Response</h3>
-                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 overflow-x-auto">
-                    <pre className="text-sm">
-                      <code>{`{
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Request</h3>
+                    <p className="text-sm text-muted-foreground">
+                      No request body required. Only requires Authorization header.
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Response</h3>
+                    <CodeBlock 
+                      code={`{
   "success": true,
   "deviceId": "j7k8l9m0...",
   "timestamp": 1704067200000
-}`}</code>
-                    </pre>
+}`}
+                      language="json"
+                    />
                   </div>
-                </div>
 
-                <CodeExamples examples={codeExamples.heartbeat} />
-              </div>
+                  <Separator />
+
+                  <CodeExamples examples={codeExamples.heartbeat} />
+                </CardContent>
+              </Card>
             </section>
 
             {/* Error Handling */}
             <section id="error-handling" className="scroll-mt-24">
-              <h2 className="text-3xl font-semibold mb-4 flex items-center gap-2">
-                <AlertCircle className="w-6 h-6 text-red-400" />
-                Error Handling
-              </h2>
-              <div className="bg-dark-800 border border-dark-700 rounded-xl p-6 space-y-6">
-                <p className="text-gray-300">
-                  All errors return a JSON response with an error message. HTTP status
-                  codes indicate the type of error:
-                </p>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <AlertCircle className="w-6 h-6 text-red-500" />
+                    Error Handling
+                  </CardTitle>
+                  <CardDescription>
+                    Understand error responses and implement robust error handling
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-sm text-foreground">
+                    All errors return a JSON response with an error message. HTTP status
+                    codes indicate the type of error:
+                  </p>
 
-                <div className="space-y-4">
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                    <h3 className="font-medium text-red-400 mb-2">401 Unauthorized</h3>
-                    <p className="text-sm text-gray-300 mb-2">
-                      Missing or invalid API key in Authorization header.
-                    </p>
-                    <div className="bg-dark-900 rounded p-2 mt-2">
-                      <code className="text-xs">{`{"error": "Invalid API key"}`}</code>
-                    </div>
-                  </div>
+                  <div className="space-y-4">
+                    <Card className="bg-red-500/10 border-red-500/20">
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-sm text-red-500">401 Unauthorized</h3>
+                          <Badge variant="destructive" className="text-xs">401</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Missing or invalid API key in Authorization header.
+                        </p>
+                        <div className="mt-2">
+                          <CodeBlock 
+                            code={`{"error": "Invalid API key"}`}
+                            language="json"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-                    <h3 className="font-medium text-yellow-400 mb-2">400 Bad Request</h3>
-                    <p className="text-sm text-gray-300 mb-2">
-                      Missing required fields or invalid data format.
-                    </p>
-                    <div className="bg-dark-900 rounded p-2 mt-2">
-                      <code className="text-xs">{`{"error": "Missing required fields: readingType, value, unit"}`}</code>
-                    </div>
-                  </div>
+                    <Card className="bg-yellow-500/10 border-yellow-500/20">
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-sm text-yellow-500">400 Bad Request</h3>
+                          <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-500">400</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Missing required fields or invalid data format.
+                        </p>
+                        <div className="mt-2">
+                          <CodeBlock 
+                            code={`{"error": "Missing required fields: readingType, value, unit"}`}
+                            language="json"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                    <h3 className="font-medium text-blue-400 mb-2">Best Practices</h3>
-                    <ul className="text-sm text-gray-300 space-y-2 list-disc list-inside">
-                      <li>
-                        Always check HTTP status codes before processing responses
-                      </li>
-                      <li>Implement exponential backoff for retries</li>
-                      <li>Log errors for debugging but don't expose sensitive data</li>
-                      <li>Handle network timeouts gracefully</li>
-                      <li>Validate sensor readings before sending (range checks, NaN checks)</li>
-                    </ul>
+                    <Card className="bg-blue-500/10 border-blue-500/20">
+                      <CardContent className="p-4 space-y-2">
+                        <h3 className="font-semibold text-sm text-blue-500 mb-2">Best Practices</h3>
+                        <ul className="text-xs text-muted-foreground space-y-2 list-disc list-inside">
+                          <li>
+                            Always check HTTP status codes before processing responses
+                          </li>
+                          <li>Implement exponential backoff for retries</li>
+                          <li>Log errors for debugging but don't expose sensitive data</li>
+                          <li>Handle network timeouts gracefully</li>
+                          <li>Validate sensor readings before sending (range checks, NaN checks)</li>
+                        </ul>
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </section>
           </main>
         </div>
