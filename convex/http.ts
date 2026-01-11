@@ -6,10 +6,10 @@ const http = httpRouter();
 
 /**
  * Register a new IoT device (admin only - should be protected by Clerk in production)
- * POST /api/devices/register
+ * POST /v1/devices/register
  */
 http.route({
-  path: "/api/devices/register",
+  path: "/v1/devices/register",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const body = await request.json();
@@ -49,11 +49,11 @@ http.route({
 
 /**
  * Submit sensor reading from IoT device
- * POST /api/readings
+ * POST /v1/readings
  * Requires: Authorization header with API key (Bearer <apiKey>)
  */
 http.route({
-  path: "/api/readings",
+  path: "/v1/readings",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     // Extract API key from Authorization header
@@ -137,11 +137,11 @@ http.route({
 
 /**
  * Device heartbeat/ping to indicate device is alive
- * POST /api/devices/heartbeat
+ * POST /v1/devices/heartbeat
  * Requires: Authorization header with API key
  */
 http.route({
-  path: "/api/devices/heartbeat",
+  path: "/v1/devices/heartbeat",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const authHeader = request.headers.get("Authorization");
@@ -192,11 +192,11 @@ http.route({
 
 /**
  * Receive flood predictions from external prediction server
- * POST /api/predictions
+ * POST /v1/predictions
  * Can be protected with a webhook secret if needed
  */
 http.route({
-  path: "/api/predictions",
+  path: "/v1/predictions",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const body = await request.json();

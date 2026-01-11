@@ -33,7 +33,7 @@ const codeExamples: Record<string, CodeExample[]> = {
     {
       language: "curl",
       label: "cURL",
-      code: `curl -X POST ${API_URL}/api/devices/register \\
+      code: `curl -X POST ${API_URL}/v1/devices/register \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Sensor-001",
@@ -48,7 +48,7 @@ const codeExamples: Record<string, CodeExample[]> = {
       label: "Python",
       code: `import requests
 
-url = "${API_URL}/api/devices/register"
+url = "${API_URL}/v1/devices/register"
 payload = {
     "name": "Sensor-001",
     "type": "water_level",
@@ -69,7 +69,7 @@ else:
     {
       language: "javascript",
       label: "Node.js",
-      code: `const response = await fetch('${API_URL}/api/devices/register', {
+      code: `const response = await fetch('${API_URL}/v1/devices/register', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ if (response.ok) {
     {
       language: "curl",
       label: "cURL",
-      code: `curl -X POST ${API_URL}/api/readings \\
+      code: `curl -X POST ${API_URL}/v1/readings \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{
@@ -120,7 +120,7 @@ if (response.ok) {
 
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
-const char* apiUrl = "${API_URL}/api/readings";
+const char* apiUrl = "${API_URL}/v1/readings";
 const char* apiKey = "YOUR_API_KEY";
 
 void setup() {
@@ -193,7 +193,7 @@ from machine import Pin, ADC
 # WiFi Configuration
 WIFI_SSID = "YOUR_WIFI_SSID"
 WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
-API_URL = "${API_URL}/api/readings"
+API_URL = "${API_URL}/v1/readings"
 API_KEY = "YOUR_API_KEY"
 
 # Connect to WiFi
@@ -258,7 +258,7 @@ while True:
 import time
 from datetime import datetime
 
-API_URL = "${API_URL}/api/readings"
+API_URL = "${API_URL}/v1/readings"
 API_KEY = "YOUR_API_KEY"
 
 def read_sensor():
@@ -307,7 +307,7 @@ if __name__ == "__main__":
       label: "Node.js",
       code: `const fetch = require('node-fetch'); // For Node.js < 18, or use built-in fetch in Node.js 18+
 
-const API_URL = '${API_URL}/api/readings';
+const API_URL = '${API_URL}/v1/readings';
 const API_KEY = 'YOUR_API_KEY';
 
 async function readSensor() {
@@ -361,7 +361,7 @@ submitReading(); // Submit immediately`,
     {
       language: "curl",
       label: "cURL",
-      code: `curl -X POST ${API_URL}/api/devices/heartbeat \\
+      code: `curl -X POST ${API_URL}/v1/devices/heartbeat \\
   -H "Authorization: Bearer YOUR_API_KEY"`,
     },
     {
@@ -370,7 +370,7 @@ submitReading(); // Submit immediately`,
       code: `import requests
 import time
 
-API_URL = "${API_URL}/api/devices/heartbeat"
+API_URL = "${API_URL}/v1/devices/heartbeat"
 API_KEY = "YOUR_API_KEY"
 
 def send_heartbeat():
@@ -398,7 +398,7 @@ while True:
       code: `#include <WiFi.h>
 #include <HTTPClient.h>
 
-const char* apiUrl = "${API_URL}/api/devices/heartbeat";
+const char* apiUrl = "${API_URL}/v1/devices/heartbeat";
 const char* apiKey = "YOUR_API_KEY";
 
 void sendHeartbeat() {
@@ -585,6 +585,35 @@ export default function DocsPage() {
               </p>
             </section>
 
+            {/* Call to Action */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <CheckCircle className="w-6 h-6 text-primary shrink-0 mt-0.5" />
+                  <div className="space-y-3">
+                    <h2 className="font-semibold text-lg text-foreground">
+                      Help Build a Better Network
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      If you have an IoT device that can contribute to flood monitoring, we encourage you to integrate with our network. 
+                      Your device can help make the network better and more comprehensive, providing valuable data for flood prediction 
+                      and early warning systems.
+                    </p>
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <p className="text-sm font-medium text-foreground">
+                        Registration Approval Process
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        All device registrations are subject to approval. We review and approve all registrations to ensure they are 
+                        legitimate and contribute to the network's mission of flood monitoring and early warning. This process helps 
+                        maintain the integrity and reliability of our monitoring network.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Separator />
 
             {/* API Endpoint Configuration */}
@@ -623,21 +652,21 @@ export default function DocsPage() {
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Device Registration:</p>
                         <CodeBlock 
-                          code={`${API_URL || "https://your-deployment.convex.site"}/api/devices/register`}
+                          code={`${API_URL || "https://your-deployment.convex.site"}/v1/devices/register`}
                           language="text"
                         />
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Submit Reading:</p>
                         <CodeBlock 
-                          code={`${API_URL || "https://your-deployment.convex.site"}/api/readings`}
+                          code={`${API_URL || "https://your-deployment.convex.site"}/v1/readings`}
                           language="text"
                         />
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Device Heartbeat:</p>
                         <CodeBlock 
-                          code={`${API_URL || "https://your-deployment.convex.site"}/api/devices/heartbeat`}
+                          code={`${API_URL || "https://your-deployment.convex.site"}/v1/devices/heartbeat`}
                           language="text"
                         />
                       </div>
@@ -689,7 +718,7 @@ export default function DocsPage() {
                         <p className="text-sm text-muted-foreground">
                           Create a device entry via the{" "}
                           <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
-                            /api/devices/register
+                            /v1/devices/register
                           </code>{" "}
                           endpoint. You'll receive an API key - save it securely!
                         </p>
@@ -721,7 +750,7 @@ export default function DocsPage() {
                         <p className="text-sm text-muted-foreground">
                           Submit sensor readings using{" "}
                           <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
-                            /api/readings
+                            /v1/readings
                           </code>
                           . Readings are stored and can trigger flood alerts.
                         </p>
@@ -794,7 +823,7 @@ export default function DocsPage() {
                       <Badge variant="secondary">POST</Badge>
                     </div>
                     <CodeBlock 
-                      code="/api/devices/register" 
+                      code="/v1/devices/register" 
                       language="text" 
                     />
                   </div>
@@ -856,7 +885,7 @@ export default function DocsPage() {
                       <Badge variant="secondary">POST</Badge>
                     </div>
                     <CodeBlock 
-                      code="/api/readings" 
+                      code="/v1/readings" 
                       language="text" 
                     />
                     <p className="text-xs text-muted-foreground">
@@ -923,7 +952,7 @@ export default function DocsPage() {
                       <Badge variant="secondary">POST</Badge>
                     </div>
                     <CodeBlock 
-                      code="/api/devices/heartbeat" 
+                      code="/v1/devices/heartbeat" 
                       language="text" 
                     />
                     <p className="text-xs text-muted-foreground">
