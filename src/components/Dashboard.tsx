@@ -5,7 +5,7 @@ import Map from './Map';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
-import { AlertTriangle, CheckCircle, Map as MapIcon, Info, Settings, Radio, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Map as MapIcon, Info, Settings, Radio, Loader2, Book } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -251,6 +251,12 @@ export default function Dashboard() {
         </div>
         
         <div className="p-4 border-t border-border bg-card/50">
+          <Button variant="secondary" className="w-full mb-2 py-2">
+            <Link to="/docs" className='flex items-center justify-center py-2'>
+              <Book className="w-4 h-4 mr-2" />
+              Documentation
+            </Link>
+          </Button>
           {isLoaded && user && (
             <Button variant="secondary" className="w-full mb-2 py-2">
               <Link to="/admin" className='flex items-center justify-center py-2'>
