@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useUser, SignInButton } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
 import Map from './Map';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -123,39 +123,39 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Selected Road Control */}
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Selected Road</h2>
-          
-          {selectedRoad ? (
-            <Card className="bg-muted/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base md:text-lg">{selectedRoad.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 md:space-y-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      selectedRoad.status === 'flooded' && "bg-red-500/10 text-red-400 border-red-500/20",
-                      selectedRoad.status === 'risk' && "bg-orange-500/10 text-orange-400 border-orange-500/20",
-                      selectedRoad.status === 'clear' && "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-                    )}
-                  >
-                    <span className={cn(
-                      "w-1.5 h-1.5 rounded-full mr-1.5",
-                      selectedRoad.status === 'flooded' && "bg-red-400",
-                      selectedRoad.status === 'risk' && "bg-orange-400",
-                      selectedRoad.status === 'clear' && "bg-emerald-400",
-                    )} />
-                    {selectedRoad.status.toUpperCase()}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Updated {new Date(selectedRoad.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </span>
-                </div>
+        {/* Selected Road Control - Only show when logged in */}
+        {isLoaded && user && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Selected Road</h2>
+            
+            {selectedRoad ? (
+              <Card className="bg-muted/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base md:text-lg">{selectedRoad.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 md:space-y-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        selectedRoad.status === 'flooded' && "bg-red-500/10 text-red-400 border-red-500/20",
+                        selectedRoad.status === 'risk' && "bg-orange-500/10 text-orange-400 border-orange-500/20",
+                        selectedRoad.status === 'clear' && "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                      )}
+                    >
+                      <span className={cn(
+                        "w-1.5 h-1.5 rounded-full mr-1.5",
+                        selectedRoad.status === 'flooded' && "bg-red-400",
+                        selectedRoad.status === 'risk' && "bg-orange-400",
+                        selectedRoad.status === 'clear' && "bg-emerald-400",
+                      )} />
+                      {selectedRoad.status.toUpperCase()}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      Updated {new Date(selectedRoad.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </span>
+                  </div>
 
-                {isLoaded && user ? (
                   <div className="space-y-2">
                     <Button
                       onClick={() => handleStatusUpdate('flooded')}
@@ -220,29 +220,18 @@ export default function Dashboard() {
                       {selectedRoad.status === 'clear' && updatingStatus !== 'clear' && <CheckCircle className="w-4 h-4" />}
                     </Button>
                   </div>
-                ) : (
-                  <div className="pt-2">
-                    <p className="text-xs text-muted-foreground text-center">
-                      <SignInButton mode="modal">
-                        <button className="text-primary hover:underline">
-                          Sign in
-                        </button>
-                      </SignInButton>
-                      {' '}to update road status
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-dashed">
-              <CardContent className="p-6 md:p-8 text-center">
-                <MapIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Select a road on the map to view details and update status.</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-dashed">
+                <CardContent className="p-6 md:p-8 text-center">
+                  <MapIcon className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">Select a road on the map to view details and update status.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Active Alerts List */}
         <div>

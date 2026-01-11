@@ -519,6 +519,11 @@ export default function Map({
             <div className="p-2 md:p-3">
               <h3 className="font-bold text-base md:text-lg">{segment.name}</h3>
               <p className="capitalize text-xs md:text-sm">Status: <span style={{ color: getColor(segment.status) }}>{segment.status}</span></p>
+              {segment.updatedAt && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Updated {new Date(segment.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </p>
+              )}
             </div>
           </Popup>
         </Polyline>
