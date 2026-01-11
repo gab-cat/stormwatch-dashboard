@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { PaginationResult } from "convex/server";
+import { paginationOptsValidator } from "convex/server";
 import { getSeverityFromHeight } from "./predictions";
 
 /**
@@ -239,14 +240,6 @@ export const getUpdatesForCells = query({
       cells: args.gridCells,
     };
   },
-});
-
-/**
- * Pagination options validator
- */
-const paginationOptsValidator = v.object({
-  numItems: v.number(),
-  cursor: v.union(v.string(), v.null()),
 });
 
 /**

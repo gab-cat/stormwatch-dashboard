@@ -115,7 +115,7 @@ export default function AlertManager() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <Card>
+          <Card className="py-0">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <AlertTriangle className="w-4 h-4" />
@@ -124,7 +124,7 @@ export default function AlertManager() {
               <span className="text-2xl font-bold">{alerts.length}</span>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="py-0">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-green-400 mb-2">
                 <ToggleRight className="w-4 h-4" />
@@ -135,7 +135,7 @@ export default function AlertManager() {
               </span>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="py-0">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-red-400 mb-2">
                 <AlertTriangle className="w-4 h-4" />
