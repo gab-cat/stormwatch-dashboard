@@ -173,8 +173,8 @@ function DevicePredictionOverlay({
   );
 
   return (
-    <Card className="absolute bottom-4 left-4 right-4 z-[1000] bg-background/50 backdrop-blur-sm shadow-2xl border-border/50 animate-in slide-in-from-bottom-5 duration-300 max-w-6xl mx-auto">
-      <CardHeader className="pb-2 pt-3 px-4">
+    <Card className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-4 z-[1000] bg-background/50 backdrop-blur-sm shadow-2xl border-border/50 animate-in slide-in-from-bottom-5 duration-300 max-w-6xl mx-auto">
+      <CardHeader className="pb-2 pt-3 px-3 md:px-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-2 flex-1">
             <div className={cn(
@@ -182,7 +182,7 @@ function DevicePredictionOverlay({
               device.isAlive ? "bg-emerald-400" : "bg-red-400"
             )} />
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg mb-0.5">{device.name}</CardTitle>
+              <CardTitle className="text-base md:text-lg mb-0.5">{device.name}</CardTitle>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Badge variant="outline" className="text-xs py-0">
                   {device.type.replace('_', ' ')}
@@ -203,22 +203,22 @@ function DevicePredictionOverlay({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0"
+            className="h-8 w-8 md:h-7 md:w-7 shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
             onClick={onClose}
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4 md:w-3.5 md:h-3.5" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="px-3 md:px-4 pb-3 md:pb-4">
         {devicePredictions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-2.5">
             {predictionsByHorizon.map((prediction, index) => {
               const horizon = timeHorizons[index];
               if (!prediction) {
                 return (
                   <Card key={horizon} className="bg-muted/10 border-dashed">
-                    <CardContent className="p-3">
+                    <CardContent className="p-2 md:p-3">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="text-xs font-medium text-muted-foreground">{horizon}</span>
@@ -236,7 +236,7 @@ function DevicePredictionOverlay({
 
               return (
                 <Card key={horizon} className={cn("border-2", severityColors.border)}>
-                  <CardContent className="p-3">
+                  <CardContent className="p-2 md:p-3">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
@@ -251,11 +251,11 @@ function DevicePredictionOverlay({
                     </div>
 
                     {/* Water Level Display */}
-                    <div className="mb-2.5">
+                    <div className="mb-2 md:mb-2.5">
                       <div className="flex items-baseline gap-1.5 mb-1.5">
                         <Droplet className={cn("w-4 h-4", severityColors.text)} />
                         <div>
-                          <div className={cn("text-2xl font-bold leading-none", severityColors.text)}>
+                          <div className={cn("text-xl md:text-2xl font-bold leading-none", severityColors.text)}>
                             {waterLevel > 0 ? waterLevel.toFixed(0) : '—'}
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5">cm</div>
@@ -310,7 +310,7 @@ function DevicePredictionOverlay({
                     {/* Probability */}
                     <div className="mt-2 pt-2 border-t border-border/50">
                       <div className="text-xs text-muted-foreground mb-0.5">Probability</div>
-                      <div className={cn("text-base font-bold", severityColors.text)}>
+                      <div className={cn("text-sm md:text-base font-bold", severityColors.text)}>
                         {(prediction.floodProbability * 100).toFixed(0)}%
                       </div>
                     </div>
@@ -505,9 +505,9 @@ export default function Map({
           }}
         >
           <Popup className="custom-popup">
-            <div className="p-2">
-              <h3 className="font-bold text-lg">{segment.name}</h3>
-              <p className="capitalize text-sm">Status: <span style={{ color: getColor(segment.status) }}>{segment.status}</span></p>
+            <div className="p-2 md:p-3">
+              <h3 className="font-bold text-base md:text-lg">{segment.name}</h3>
+              <p className="capitalize text-xs md:text-sm">Status: <span style={{ color: getColor(segment.status) }}>{segment.status}</span></p>
             </div>
           </Popup>
         </Polyline>
@@ -533,12 +533,12 @@ export default function Map({
             }}
           >
             <Popup className="device-popup">
-              <div className="p-3 min-w-[240px]">
+              <div className="p-2 md:p-3 min-w-[200px] md:min-w-[240px] max-w-[calc(100vw-2rem)] md:max-w-none">
                 {/* Header */}
-                <div className="flex items-start gap-2 mb-3">
-                  <Radio className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2 mb-2 md:mb-3">
+                  <Radio className="w-4 h-4 md:w-5 md:h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-base leading-tight">{device.name}</h3>
+                    <h3 className="font-bold text-sm md:text-base leading-tight">{device.name}</h3>
                     <p className="text-xs text-muted-foreground capitalize mt-0.5">
                       {device.type.replace('_', ' ')}
                     </p>
@@ -546,7 +546,7 @@ export default function Map({
                 </div>
 
                 {/* Status */}
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/50">
+                <div className="flex items-center gap-2 mb-2 md:mb-3 pb-2 md:pb-3 border-b border-border/50">
                   <div className={cn(
                     "w-2 h-2 rounded-full",
                     device.isAlive ? "bg-emerald-400" : "bg-red-400"
@@ -562,13 +562,13 @@ export default function Map({
 
                 {/* Prediction */}
                 {highestPrediction && highestPrediction.predictedWaterLevel !== undefined ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     <div>
                       <p className="text-xs text-muted-foreground mb-2 font-medium">Latest Prediction</p>
                       <div className="flex items-baseline gap-2 mb-2">
                         <Droplet className="w-4 h-4 text-blue-400 flex-shrink-0" />
                         <div>
-                          <div className="text-2xl font-bold leading-none">
+                          <div className="text-xl md:text-2xl font-bold leading-none">
                             {highestPrediction.predictedWaterLevel.toFixed(0)}
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5">cm flood height</div>
@@ -644,19 +644,19 @@ export default function Map({
       {/* Alerts Overlay Panel */}
       {layersVisible.alerts && (layersVisible.devices || showDevices) && activeAlerts && activeAlerts.length > 0 && (
         <Card className={cn(
-          "absolute top-4 left-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg transition-all",
-          showAlertsPanel ? "w-80" : "w-auto"
+          "absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto z-[1000] bg-background/90 backdrop-blur-sm shadow-lg transition-all",
+          showAlertsPanel ? "md:w-80" : "md:w-auto"
         )}>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CardTitle className="text-xs md:text-sm font-semibold flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
                 Active Alerts ({activeAlerts.length})
               </CardTitle>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6"
+                className="h-8 w-8 md:h-6 md:w-6 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                 onClick={() => setShowAlertsPanel(!showAlertsPanel)}
               >
                 {showAlertsPanel ? (
@@ -668,7 +668,7 @@ export default function Map({
             </div>
           </CardHeader>
           {showAlertsPanel && (
-            <CardContent className="space-y-2 max-h-64 overflow-y-auto">
+            <CardContent className="space-y-2 max-h-64 overflow-y-auto px-3 md:px-6 pb-3 md:pb-6">
               {activeAlerts.map((alert) => {
                 const severityColors = getAlertSeverityColor(alert.severity);
                 return (
@@ -724,9 +724,9 @@ export default function Map({
 
       {/* Non-blocking loading indicator - shown for initial load or background fetches */}
       {(isInitialLoad || isFetching) && (
-        <div className="absolute bottom-4 left-4 z-[1000] bg-gray-900/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-700/50 flex items-center gap-2 pointer-events-none">
+        <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-[1000] bg-gray-900/90 backdrop-blur-sm rounded-lg px-2 md:px-3 py-2 shadow-lg border border-gray-700/50 flex items-center gap-2 pointer-events-none">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent"></div>
-          <span className="text-sm text-gray-300">{isInitialLoad ? 'Loading map data...' : 'Updating...'}</span>
+          <span className="text-xs md:text-sm text-gray-300">{isInitialLoad ? 'Loading map data...' : 'Updating...'}</span>
         </div>
       )}
 
@@ -736,63 +736,63 @@ export default function Map({
           <Button
             variant="secondary"
             size="icon"
-            className="absolute top-4 right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg"
+            className="absolute top-2 right-2 md:top-4 md:right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg min-h-[44px] min-w-[44px]"
             onClick={() => setShowLayerControl(!showLayerControl)}
           >
             <Layers className="w-5 h-5" />
           </Button>
 
           {showLayerControl && (
-            <Card className="absolute top-16 right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg">
-              <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-sm mb-2">Map Layers</h3>
-                <div className="flex items-center gap-2">
+            <Card className="absolute top-14 right-2 md:top-16 md:right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg max-w-[calc(100vw-1rem)] md:max-w-none">
+              <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3">
+                <h3 className="font-semibold text-xs md:text-sm mb-2">Map Layers</h3>
+                <div className="flex items-center gap-2 min-h-[44px]">
                   <input
                     type="checkbox"
                     id="layer-roads"
                     checked={layersVisible.roads}
                     onChange={(e) => setLayersVisible({ ...layersVisible, roads: e.target.checked })}
-                    className="rounded"
+                    className="rounded w-4 h-4 md:w-auto md:h-auto"
                   />
-                  <Label htmlFor="layer-roads" className="text-sm cursor-pointer">
+                  <Label htmlFor="layer-roads" className="text-xs md:text-sm cursor-pointer">
                     Road Segments
                   </Label>
                 </div>
                 {showDevices && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-h-[44px]">
                     <input
                       type="checkbox"
                       id="layer-devices"
                       checked={layersVisible.devices}
                       onChange={(e) => setLayersVisible({ ...layersVisible, devices: e.target.checked })}
-                      className="rounded"
+                      className="rounded w-4 h-4 md:w-auto md:h-auto"
                     />
-                    <Label htmlFor="layer-devices" className="text-sm cursor-pointer">
+                    <Label htmlFor="layer-devices" className="text-xs md:text-sm cursor-pointer">
                       IoT Devices
                     </Label>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-h-[44px]">
                   <input
                     type="checkbox"
                     id="layer-device-radius"
                     checked={layersVisible.deviceRadius}
                     onChange={(e) => setLayersVisible({ ...layersVisible, deviceRadius: e.target.checked })}
-                    className="rounded"
+                    className="rounded w-4 h-4 md:w-auto md:h-auto"
                   />
-                  <Label htmlFor="layer-device-radius" className="text-sm cursor-pointer">
+                  <Label htmlFor="layer-device-radius" className="text-xs md:text-sm cursor-pointer">
                     Device Influence Radius
                   </Label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-h-[44px]">
                   <input
                     type="checkbox"
                     id="layer-alerts"
                     checked={layersVisible.alerts}
                     onChange={(e) => setLayersVisible({ ...layersVisible, alerts: e.target.checked })}
-                    className="rounded"
+                    className="rounded w-4 h-4 md:w-auto md:h-auto"
                   />
-                  <Label htmlFor="layer-alerts" className="text-sm cursor-pointer">
+                  <Label htmlFor="layer-alerts" className="text-xs md:text-sm cursor-pointer">
                     Alerts & Warnings
                   </Label>
                 </div>

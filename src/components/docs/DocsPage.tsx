@@ -470,6 +470,7 @@ export default function DocsPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const sections = [
+    { id: "api-endpoint", title: "API Endpoint", icon: Code },
     { id: "quickstart", title: "Quick Start", icon: CheckCircle },
     { id: "authentication", title: "Authentication", icon: Key },
     { id: "register-device", title: "Register Device", icon: Send },
@@ -585,6 +586,85 @@ export default function DocsPage() {
             </section>
 
             <Separator />
+
+            {/* API Endpoint Configuration */}
+            <section id="api-endpoint" className="scroll-mt-24">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Code className="w-6 h-6 text-blue-500" />
+                    API Base URL
+                  </CardTitle>
+                  <CardDescription>
+                    The base URL for all StormWatch API endpoints
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-foreground">
+                    All API requests are made to the following base URL. All endpoint paths are relative to this URL.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Base URL</h3>
+                    <CodeBlock 
+                      code={API_URL || "https://your-deployment.convex.site"}
+                      language="text"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold">Example Endpoints</h3>
+                    <p className="text-sm text-muted-foreground">
+                      All endpoints are constructed by appending the path to the base URL:
+                    </p>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Device Registration:</p>
+                        <CodeBlock 
+                          code={`${API_URL || "https://your-deployment.convex.site"}/api/devices/register`}
+                          language="text"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Submit Reading:</p>
+                        <CodeBlock 
+                          code={`${API_URL || "https://your-deployment.convex.site"}/api/readings`}
+                          language="text"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Device Heartbeat:</p>
+                        <CodeBlock 
+                          code={`${API_URL || "https://your-deployment.convex.site"}/api/devices/heartbeat`}
+                          language="text"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <Card className="bg-blue-500/10 border-blue-500/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Code className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-sm text-blue-500">
+                            Using the Base URL in Your Code
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            Store the base URL as a constant or environment variable in your application. 
+                            All code examples in this documentation use this base URL to construct full endpoint URLs.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CardContent>
+              </Card>
+            </section>
 
             {/* Quick Start */}
             <section id="quickstart" className="scroll-mt-24">
