@@ -8,9 +8,12 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  Clock,
   MapPin,
   Pencil,
+  Copy,
+  AlertTriangle,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent } from "../ui/card";
@@ -29,11 +32,15 @@ export default function DeviceManager() {
   const updateDevice = useMutation(api.devices.update);
   const removeDevice = useMutation(api.devices.remove);
   const regenerateApiKey = useMutation(api.devices.regenerateApiKey);
+  const setEnabled = useMutation(api.devices.setEnabled);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditLocationPicker, setShowEditLocationPicker] = useState(false);
+  const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const [regeneratedKey, setRegeneratedKey] = useState<string | null>(null);
+  const [keyCopied, setKeyCopied] = useState(false);
   const [editingDeviceId, setEditingDeviceId] = useState<Id<"iotDevices"> | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -69,6 +76,7 @@ export default function DeviceManager() {
       owner: formData.owner,
       location: formData.location,
       influenceRadius: formData.influenceRadius,
+      isEnabled: true, // Dashboard-created devices start enabled
     });
     setShowAddModal(false);
     setFormData({
@@ -89,7 +97,24 @@ export default function DeviceManager() {
 
   const handleRegenerateKey = async (id: Id<"iotDevices">) => {
     const newKey = await regenerateApiKey({ id });
-    alert(`New API Key: ${newKey}\n\nSave this key securely. It won't be shown again.`);
+    setRegeneratedKey(newKey);
+    setShowKeyDialog(true);
+    setKeyCopied(false);
+  };
+
+  const handleToggleEnabled = async (id: Id<"iotDevices">, currentStatus: boolean) => {
+    await setEnabled({
+      deviceId: id,
+      isEnabled: !currentStatus,
+    });
+  };
+
+  const handleCopyKey = async () => {
+    if (regeneratedKey) {
+      await navigator.clipboard.writeText(regeneratedKey);
+      setKeyCopied(true);
+      setTimeout(() => setKeyCopied(false), 2000);
+    }
   };
 
   const handleEditClick = (device: NonNullable<typeof devices>[number]) => {
@@ -181,8 +206,8 @@ export default function DeviceManager() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <Card>
+        <div className="grid grid-cols-5 gap-4 mb-8">
+          <Card className="py-0">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Radio className="w-4 h-4" />
@@ -191,7 +216,7 @@ export default function DeviceManager() {
               <span className="text-2xl font-bold">{devices.length}</span>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="py-0">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-green-400 mb-2">
                 <CheckCircle className="w-4 h-4" />
@@ -202,7 +227,7 @@ export default function DeviceManager() {
               </span>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="py-0">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-red-400 mb-2">
                 <AlertCircle className="w-4 h-4" />
@@ -213,25 +238,32 @@ export default function DeviceManager() {
               </span>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="py-0">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-orange-400 mb-2">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm font-medium">Stale</span>
+              <div className="flex items-center gap-2 text-emerald-400 mb-2">
+                <Power className="w-4 h-4" />
+                <span className="text-sm font-medium">Enabled</span>
               </div>
               <span className="text-2xl font-bold">
-                {
-                  devices.filter(
-                    (d) => Date.now() - d.lastSeen > 30 * 60 * 1000
-                  ).length
-                }
+                {devices.filter((d) => d.isEnabled ?? false).length}
+              </span>
+            </CardContent>
+          </Card>
+          <Card className="py-0">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-orange-400 mb-2">
+                <PowerOff className="w-4 h-4" />
+                <span className="text-sm font-medium">Disabled</span>
+              </div>
+              <span className="text-2xl font-bold">
+                {devices.filter((d) => !(d.isEnabled ?? false)).length}
               </span>
             </CardContent>
           </Card>
         </div>
 
         {/* Devices Table */}
-        <Card>
+        <Card className="py-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -265,18 +297,33 @@ export default function DeviceManager() {
                     </TableCell>
                     <TableCell>{device.owner}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {device.isAlive ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                            <span className="text-green-400">Online</span>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="w-4 h-4 text-red-400" />
-                            <span className="text-red-400">Offline</span>
-                          </>
-                        )}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          {device.isAlive ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 text-green-400" />
+                              <span className="text-green-400 text-sm">Online</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-4 h-4 text-red-400" />
+                              <span className="text-red-400 text-sm">Offline</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {device.isEnabled ?? false ? (
+                            <>
+                              <Power className="w-4 h-4 text-emerald-400" />
+                              <span className="text-emerald-400 text-sm">Enabled</span>
+                            </>
+                          ) : (
+                            <>
+                              <PowerOff className="w-4 h-4 text-orange-400" />
+                              <span className="text-orange-400 text-sm">Disabled</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
@@ -284,6 +331,19 @@ export default function DeviceManager() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleEnabled(device._id, device.isEnabled ?? false)}
+                          title={(device.isEnabled ?? false) ? "Disable Device" : "Enable Device"}
+                          className={(device.isEnabled ?? false) ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20" : "text-orange-400 hover:text-orange-300 hover:bg-orange-500/20"}
+                        >
+                          {(device.isEnabled ?? false) ? (
+                            <PowerOff className="w-4 h-4" />
+                          ) : (
+                            <Power className="w-4 h-4" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -538,6 +598,58 @@ export default function DeviceManager() {
           setEditFormData({ ...editFormData, location });
         }}
       />
+
+      {/* API Key Regeneration Dialog */}
+      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              New API Key Generated
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+              <p className="text-sm text-yellow-400">
+                <strong>Important:</strong> Save this key securely. It won't be shown again.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>API Key</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={regeneratedKey || ""}
+                  readOnly
+                  className="font-mono text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyKey}
+                  title="Copy to clipboard"
+                >
+                  {keyCopied ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            {keyCopied && (
+              <p className="text-sm text-green-400 flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                Key copied to clipboard!
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowKeyDialog(false)}>
+              I've Saved the Key
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

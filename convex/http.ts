@@ -33,6 +33,7 @@ http.route({
       owner: body.owner,
       location: body.location, // [lat, lng]
       metadata: body.metadata,
+      isEnabled: false, // API-registered devices start disabled for security
     });
 
     return new Response(
@@ -72,6 +73,14 @@ http.route({
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
         { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if device is enabled
+    if (!device.isEnabled) {
+      return new Response(
+        JSON.stringify({ error: "Device is disabled. Please enable the device in the dashboard to submit readings." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -150,6 +159,14 @@ http.route({
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
         { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if device is enabled
+    if (!device.isEnabled) {
+      return new Response(
+        JSON.stringify({ error: "Device is disabled. Please enable the device in the dashboard to send heartbeats." }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
       );
     }
 

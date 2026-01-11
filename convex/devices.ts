@@ -134,6 +134,7 @@ export const create = mutation({
     location: v.array(v.number()), // [lat, lng]
     influenceRadius: v.optional(v.number()), // in meters, default 500
     metadata: v.optional(v.any()),
+    isEnabled: v.optional(v.boolean()), // Defaults to true for backward compatibility
   },
   returns: v.id("iotDevices"),
   handler: async (ctx, args): Promise<Id<"iotDevices">> => {
@@ -148,6 +149,7 @@ export const create = mutation({
       location: args.location,
       influenceRadius: args.influenceRadius ?? 500, // Default 500 meters
       isAlive: true,
+      isEnabled: args.isEnabled ?? true, // Default to true for backward compatibility
       lastSeen: now,
       metadata: args.metadata,
       createdAt: now,
@@ -247,5 +249,21 @@ export const regenerateApiKey = mutation({
       updatedAt: Date.now(),
     });
     return newApiKey;
+  },
+});
+
+/**
+ * Set device enabled/disabled status
+ */
+export const setEnabled = mutation({
+  args: {
+    deviceId: v.id("iotDevices"),
+    isEnabled: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.deviceId, {
+      isEnabled: args.isEnabled,
+      updatedAt: Date.now(),
+    });
   },
 });

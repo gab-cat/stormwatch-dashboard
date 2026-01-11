@@ -46,6 +46,7 @@ export default defineSchema({
     location: v.array(v.number()), // [lat, lng]
     influenceRadius: v.number(), // Influence radius in meters (default 500m)
     isAlive: v.boolean(),
+    isEnabled: v.optional(v.boolean()), // Whether device is enabled to submit readings
     lastSeen: v.number(),
     metadata: v.optional(v.any()), // Additional device-specific data
     createdAt: v.number(),
@@ -53,7 +54,8 @@ export default defineSchema({
   })
     .index("by_apiKey", ["apiKey"])
     .index("by_type", ["type"])
-    .index("by_alive", ["isAlive"]),
+    .index("by_alive", ["isAlive"])
+    .index("by_enabled", ["isEnabled"]),
 
   // Sensor readings from IoT devices
   sensorReadings: defineTable({
