@@ -28,7 +28,6 @@ interface ViewportBounds {
 interface UseGridCellCacheOptions {
   viewportBounds: ViewportBounds;
   buffer?: number; // Buffer percentage for pre-fetching (default: 0.2)
-  updateCheckInterval?: number; // How often to check for updates in ms (default: 30000 = 30s)
 }
 
 /**
@@ -38,16 +37,12 @@ interface UseGridCellCacheOptions {
 export function useGridCellCache({
   viewportBounds,
   buffer = 0.2,
-  updateCheckInterval = 30000,
 }: UseGridCellCacheOptions) {
   // Track which grid cells have been loaded
   const loadedCellsRef = useRef<Set<string>>(new Set());
   
   // Store all segments by ID (persistent cache)
   const segmentsCacheRef = useRef<Map<string, RoadSegment>>(new Map());
-  
-  // Track last update check timestamp
-  const lastUpdateCheckRef = useRef<number>(Date.now());
   
   // Force re-render when cache updates
   const [cacheVersion, setCacheVersion] = useState(0);
@@ -86,7 +81,6 @@ export function useGridCellCache({
     loadedCellsArray.length > 0
       ? {
           gridCells: loadedCellsArray,
-          sinceTimestamp: lastUpdateCheckRef.current,
         }
       : "skip"
   );
@@ -118,13 +112,14 @@ export function useGridCellCache({
   }, [gridCellsData]);
 
   // Process update data and refresh cache
+  // Convex automatically re-runs this query when segments in the loaded cells are updated
   useEffect(() => {
-    if (updatesData?.segments && updatesData.segments.length > 0) {
+    if (updatesData?.segments) {
       let cacheUpdated = false;
 
       updatesData.segments.forEach((segment) => {
         const existing = segmentsCacheRef.current.get(segment._id);
-        // Update if newer
+        // Update if new or if updatedAt is newer
         if (!existing || segment.updatedAt > existing.updatedAt) {
           segmentsCacheRef.current.set(segment._id, segment);
           cacheUpdated = true;
@@ -134,24 +129,8 @@ export function useGridCellCache({
       if (cacheUpdated) {
         setCacheVersion((v) => v + 1);
       }
-
-      // Update last check timestamp
-      lastUpdateCheckRef.current = Date.now();
     }
   }, [updatesData]);
-
-  // Periodically check for updates
-  useEffect(() => {
-    if (loadedCellsArray.length === 0) return;
-
-    const interval = setInterval(() => {
-      lastUpdateCheckRef.current = Date.now();
-      // Trigger re-query by updating cache version
-      setCacheVersion((v) => v + 1);
-    }, updateCheckInterval);
-
-    return () => clearInterval(interval);
-  }, [loadedCellsArray.length, updateCheckInterval]);
 
   // Get segments visible in current viewport (not expanded)
   const visibleSegments = useMemo(() => {
@@ -187,7 +166,6 @@ export function useGridCellCache({
   const clearCache = useCallback(() => {
     loadedCellsRef.current.clear();
     segmentsCacheRef.current.clear();
-    lastUpdateCheckRef.current = Date.now();
     setCacheVersion((v) => v + 1);
   }, []);
 

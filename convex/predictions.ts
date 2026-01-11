@@ -58,6 +58,34 @@ export const getByDevice = query({
 });
 
 /**
+ * Get predictions for multiple devices
+ * Efficient query that only loads predictions for specified devices
+ */
+export const getByDevices = query({
+  args: {
+    deviceIds: v.array(v.id("iotDevices")),
+  },
+  handler: async (ctx, args) => {
+    if (args.deviceIds.length === 0) {
+      return [];
+    }
+
+    // Fetch predictions for each device in parallel using indexed queries
+    const results = await Promise.all(
+      args.deviceIds.map((deviceId) =>
+        ctx.db
+          .query("predictions")
+          .withIndex("by_device", (q) => q.eq("deviceId", deviceId))
+          .collect()
+      )
+    );
+
+    // Flatten and return all predictions
+    return results.flat();
+  },
+});
+
+/**
  * Get latest predictions for a device by time horizon
  */
 export const getLatestByDevice = query({

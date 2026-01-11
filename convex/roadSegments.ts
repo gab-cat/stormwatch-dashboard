@@ -196,13 +196,12 @@ export const getByGridCells = query({
 });
 
 /**
- * Get updated segments for specific grid cells since a timestamp
- * Used for real-time updates - checks for changes in loaded cells
+ * Get segments for specific grid cells
+ * Used for real-time updates - automatically re-runs when segments in these cells are updated
  */
 export const getUpdatesForCells = query({
   args: {
     gridCells: v.array(v.string()),
-    sinceTimestamp: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     if (args.gridCells.length === 0) {
@@ -219,15 +218,8 @@ export const getUpdatesForCells = query({
       )
     );
 
-    // Filter by timestamp if provided
-    let allSegments = results.flat();
-    if (args.sinceTimestamp !== undefined) {
-      allSegments = allSegments.filter(
-        (seg) => seg.updatedAt > args.sinceTimestamp!
-      );
-    }
-
-    // Deduplicate by ID
+    // Deduplicate by ID (segments may span multiple cells)
+    const allSegments = results.flat();
     const uniqueSegments = new Map();
     for (const segment of allSegments) {
       if (!uniqueSegments.has(segment._id)) {
@@ -279,6 +271,40 @@ export const getByStatus = query({
       .query("roadSegments")
       .withIndex("by_status", (q) => q.eq("status", args.status))
       .collect();
+  },
+});
+
+/**
+ * Get counts of road segments by status
+ * Efficient query that returns only counts, not full documents
+ */
+export const getStatusCounts = query({
+  args: {},
+  handler: async (ctx) => {
+    // Use indexed queries for efficient counting
+    const [flooded, risk, clear] = await Promise.all([
+      ctx.db
+        .query("roadSegments")
+        .withIndex("by_status", (q) => q.eq("status", "flooded"))
+        .collect()
+        .then((segments) => segments.length),
+      ctx.db
+        .query("roadSegments")
+        .withIndex("by_status", (q) => q.eq("status", "risk"))
+        .collect()
+        .then((segments) => segments.length),
+      ctx.db
+        .query("roadSegments")
+        .withIndex("by_status", (q) => q.eq("status", "clear"))
+        .collect()
+        .then((segments) => segments.length),
+    ]);
+
+    return {
+      flooded,
+      risk,
+      clear,
+    };
   },
 });
 

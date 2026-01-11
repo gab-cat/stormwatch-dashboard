@@ -2,7 +2,7 @@ import { MapContainer, TileLayer, Polyline, Circle, Marker, Popup, useMapEvents,
 import { api } from '../../convex/_generated/api';
 import { useQuery } from 'convex/react';
 import type { Id } from '../../convex/_generated/dataModel';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { Layers, AlertTriangle, ChevronDown, ChevronUp, Droplet, Car, User, Radio, Clock, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -19,6 +19,7 @@ interface MapProps {
   onDeviceClick?: (deviceId: Id<"iotDevices"> | null) => void;
   selectedDeviceId?: Id<"iotDevices"> | null;
   hideOverlays?: boolean;
+  devices?: NonNullable<ReturnType<typeof useQuery<typeof api.devices.getWithLocations>>>;
 }
 
 // Fix for Leaflet default icon issues in React
@@ -118,7 +119,7 @@ function MapCenterController({
     if (selectedDeviceId && devices && devices.length > 0) {
       const device = devices.find(d => d._id === selectedDeviceId);
       if (device && device.location && device.location.length === 2) {
-        map.flyTo([device.location[0], device.location[1]], 16, {
+        map.flyTo([device.location[0], device.location[1]], map.getMaxZoom(), {
           duration: 1.0,
         });
       }
@@ -129,7 +130,7 @@ function MapCenterController({
 }
 
 // Device Prediction Overlay Component
-function DevicePredictionOverlay({
+const DevicePredictionOverlay = memo(function DevicePredictionOverlay({
   deviceId,
   onClose,
   devices,
@@ -138,10 +139,13 @@ function DevicePredictionOverlay({
   deviceId: Id<"iotDevices">;
   onClose: () => void;
   devices?: NonNullable<ReturnType<typeof useQuery<typeof api.devices.getWithLocations>>>;
-  predictions?: NonNullable<ReturnType<typeof useQuery<typeof api.predictions.getAll>>>;
+  predictions?: NonNullable<ReturnType<typeof useQuery<typeof api.predictions.getByDevices>>>;
 }) {
-  const device = devices?.find(d => d._id === deviceId);
-  const devicePredictions = predictions?.filter(p => p.deviceId === deviceId) || [];
+  const device = useMemo(() => devices?.find(d => d._id === deviceId), [devices, deviceId]);
+  const devicePredictions = useMemo(
+    () => predictions?.filter(p => p.deviceId === deviceId) || [],
+    [predictions, deviceId]
+  );
   
   const timeHorizons = ["1h", "2h", "4h", "8h"] as const;
   
@@ -169,12 +173,15 @@ function DevicePredictionOverlay({
 
   if (!device) return null;
 
-  const predictionsByHorizon = timeHorizons.map((horizon) =>
-    devicePredictions.find((p) => p.timeHorizon === horizon)
+  const predictionsByHorizon = useMemo(
+    () => timeHorizons.map((horizon) =>
+      devicePredictions.find((p) => p.timeHorizon === horizon)
+    ),
+    [devicePredictions]
   );
 
   return (
-    <Card className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-4 z-[1000] bg-background/50 backdrop-blur-sm shadow-2xl border-border/50 animate-in slide-in-from-bottom-5 duration-300 max-w-6xl mx-auto">
+    <Card className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-4 z-1000 bg-background/50 backdrop-blur-sm shadow-2xl border-border/50 animate-in slide-in-from-bottom-5 duration-300 max-w-6xl mx-auto">
       <CardHeader className="pb-2 pt-3 px-3 md:px-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-2 flex-1">
@@ -308,7 +315,7 @@ function DevicePredictionOverlay({
       </CardContent>
     </Card>
   );
-}
+});
 
 export default function Map({ 
   onSelectRoad, 
@@ -317,6 +324,7 @@ export default function Map({
   onDeviceClick,
   selectedDeviceId = null,
   hideOverlays = false,
+  devices: devicesProp,
 }: MapProps) {
   const center: [number, number] = [13.6139, 123.1853]; // Naga City
   const [layersVisible, setLayersVisible] = useState({
@@ -361,13 +369,35 @@ export default function Map({
   } = useGridCellCache({
     viewportBounds: debouncedBounds,
     buffer: 0.2, // 20% buffer for pre-fetching
-    updateCheckInterval: 30000, // Check for updates every 30 seconds
   });
 
-  // Load devices and predictions if enabled
-  const devices = useQuery(api.devices.getWithLocations, layersVisible.devices || showDevices ? {} : "skip");
-  const predictions = useQuery(api.predictions.getAll, layersVisible.devices || showDevices ? {} : "skip");
+  // Use devices from prop if provided, otherwise query (for backward compatibility)
+  const devicesFromQuery = useQuery(
+    api.devices.getWithLocations,
+    !devicesProp && (layersVisible.devices || showDevices) ? {} : "skip"
+  );
+  const devices = devicesProp || devicesFromQuery;
+  // Only load predictions for visible devices (much more efficient than loading all)
+  const deviceIds = devices?.map(d => d._id) || [];
+  const predictions = useQuery(
+    api.predictions.getByDevices,
+    (layersVisible.devices || showDevices) && deviceIds.length > 0
+      ? { deviceIds }
+      : "skip"
+  );
   const activeAlerts = useQuery(api.alerts.getActive, (layersVisible.devices || showDevices) && layersVisible.alerts ? {} : "skip");
+
+  // Memoize predictions by device ID for efficient lookups
+  type Prediction = NonNullable<typeof predictions>[number];
+  const predictionsByDevice = useMemo(() => {
+    const predictionsMap = new globalThis.Map<Id<"iotDevices">, Prediction[]>();
+    if (!predictions) return predictionsMap;
+    predictions.forEach((pred) => {
+      const existing = predictionsMap.get(pred.deviceId) || [];
+      predictionsMap.set(pred.deviceId, [...existing, pred]);
+    });
+    return predictionsMap;
+  }, [predictions]) as globalThis.Map<Id<"iotDevices">, Prediction[]>;
 
   const handleBoundsChange = useCallback(
     (bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => {
@@ -426,15 +456,15 @@ export default function Map({
       
       {/* Device Influence Radius Circles */}
       {(layersVisible.deviceRadius || showDevices) && devices?.map((device) => {
-        const devicePredictions = predictions?.filter(p => p.deviceId === device._id) || [];
+        const devicePredictions = predictionsByDevice.get(device._id) || [];
         const highestPrediction = devicePredictions.length > 0 
-          ? devicePredictions.reduce((max, p) => {
-              const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+          ? devicePredictions.reduce((max: Prediction, p: Prediction) => {
+              const severityOrder: Record<"low" | "medium" | "high" | "critical", number> = { low: 1, medium: 2, high: 3, critical: 4 };
               return severityOrder[p.severity] > severityOrder[max.severity] ? p : max;
             }, devicePredictions[0])
           : null;
         
-        const severityColors = {
+        const severityColors: Record<"low" | "medium" | "high" | "critical", { fill: string; stroke: string; opacity: number }> = {
           critical: { fill: '#dc2626', stroke: '#ffffff', opacity: 0.2 },
           high: { fill: '#ea580c', stroke: '#ffffff', opacity: 0.15 },
           medium: { fill: '#ca8a04', stroke: '#ffffff', opacity: 0.1 },
@@ -496,10 +526,10 @@ export default function Map({
 
       {/* Device Markers */}
       {(layersVisible.devices || showDevices) && devices?.map((device) => {
-        const devicePredictions = predictions?.filter(p => p.deviceId === device._id) || [];
+        const devicePredictions = predictionsByDevice.get(device._id) || [];
         const highestPrediction = devicePredictions.length > 0 
-          ? devicePredictions.reduce((max, p) => {
-              const severityOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+          ? devicePredictions.reduce((max: Prediction, p: Prediction) => {
+              const severityOrder: Record<"low" | "medium" | "high" | "critical", number> = { low: 1, medium: 2, high: 3, critical: 4 };
               return severityOrder[p.severity] > severityOrder[max.severity] ? p : max;
             }, devicePredictions[0])
           : null;
@@ -517,7 +547,7 @@ export default function Map({
               <div className="p-2 md:p-3 min-w-[200px] md:min-w-[240px] max-w-[calc(100vw-2rem)] md:max-w-none">
                 {/* Header */}
                 <div className="flex items-start gap-2 mb-2 md:mb-3">
-                  <Radio className="w-4 h-4 md:w-5 md:h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <Radio className="w-4 h-4 md:w-5 md:h-5 text-blue-400 mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-sm md:text-base leading-tight">{device.name}</h3>
                     <p className="text-xs text-muted-foreground capitalize mt-0.5">
@@ -616,19 +646,19 @@ export default function Map({
       {/* Alerts Overlay Panel */}
       {!hideOverlays && layersVisible.alerts && (layersVisible.devices || showDevices) && activeAlerts && activeAlerts.length > 0 && (
         <Card className={cn(
-          "absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto z-[1000] bg-background/90 backdrop-blur-sm shadow-lg transition-all",
-          showAlertsPanel ? "md:w-80" : "md:w-auto"
+          "absolute top-2 left-2 right-2 py-0 md:top-4 md:left-4 md:right-auto z-1000 bg-background/90 backdrop-blur-sm shadow-lg transition-all",
+          showAlertsPanel ? "md:w-80" : "md:min-w-[220px]"
         )}>
-          <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xs md:text-sm font-semibold flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400" />
-                Active Alerts ({activeAlerts.length})
+          <CardHeader className="pb-2 px-3 md:px-4 pt-3 md:pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-xs md:text-sm font-semibold flex items-center gap-2 shrink-0">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <span className="whitespace-nowrap">Alerts ({activeAlerts.length})</span>
               </CardTitle>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 md:h-6 md:w-6 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                className="h-8 w-8 md:h-7 md:w-7 min-h-[44px] min-w-[44px] md:min-h-[32px] md:min-w-[32px] shrink-0"
                 onClick={() => setShowAlertsPanel(!showAlertsPanel)}
               >
                 {showAlertsPanel ? (
@@ -653,7 +683,7 @@ export default function Map({
                     )}
                   >
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className={cn("w-4 h-4 mt-0.5 flex-shrink-0", severityColors.text)} />
+                      <AlertTriangle className={cn("w-4 h-4 mt-0.5 shrink-0", severityColors.text)} />
                       <div className="flex-1 min-w-0">
                         <p className={cn("font-medium text-sm mb-1", severityColors.text)}>
                           {alert.title}
@@ -696,7 +726,7 @@ export default function Map({
 
       {/* Non-blocking loading indicator - shown for initial load or background fetches */}
       {(isInitialLoad || isFetching) && (
-        <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-[1000] bg-gray-900/90 backdrop-blur-sm rounded-lg px-2 md:px-3 py-2 shadow-lg border border-gray-700/50 flex items-center gap-2 pointer-events-none">
+        <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-1000 bg-gray-900/90 backdrop-blur-sm rounded-lg px-2 md:px-3 py-2 shadow-lg border border-gray-700/50 flex items-center gap-2 pointer-events-none">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent"></div>
           <span className="text-xs md:text-sm text-gray-300">{isInitialLoad ? 'Loading map data...' : 'Updating...'}</span>
         </div>
@@ -708,14 +738,14 @@ export default function Map({
           <Button
             variant="secondary"
             size="icon"
-            className="absolute top-2 right-2 md:top-4 md:right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg min-h-[44px] min-w-[44px]"
+            className="absolute top-2 right-2 md:top-4 md:right-4 z-1000 bg-background/90 backdrop-blur-sm shadow-lg min-h-[44px] min-w-[44px]"
             onClick={() => setShowLayerControl(!showLayerControl)}
           >
             <Layers className="w-5 h-5" />
           </Button>
 
           {showLayerControl && (
-            <Card className="absolute top-14 right-2 md:top-16 md:right-4 z-[1000] bg-background/90 backdrop-blur-sm shadow-lg max-w-[calc(100vw-1rem)] md:max-w-none">
+            <Card className="absolute top-14 right-2 md:top-16 md:right-4 z-1000 bg-background/90 backdrop-blur-sm shadow-lg max-w-[calc(100vw-1rem)] md:max-w-none">
               <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3">
                 <h3 className="font-semibold text-xs md:text-sm mb-2">Map Layers</h3>
                 <div className="flex items-center gap-2 min-h-[44px]">

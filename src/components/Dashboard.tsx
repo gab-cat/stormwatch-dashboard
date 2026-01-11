@@ -24,8 +24,10 @@ export default function Dashboard() {
     api.roadSegments.getById,
     selectedRoadId ? { id: selectedRoadId } : "skip"
   );
+  // Use efficient status counts query instead of loading all segments
+  const statusCounts = useQuery(api.roadSegments.getStatusCounts);
+  // Only load flooded roads for the alerts list (not for counts)
   const floodedRoads = useQuery(api.roadSegments.getByStatus, { status: "flooded" });
-  const riskRoads = useQuery(api.roadSegments.getByStatus, { status: "risk" });
   
   const updateStatus = useMutation(api.roadSegments.updateStatus);
   const devices = useQuery(api.devices.getAll);
@@ -40,8 +42,8 @@ export default function Dashboard() {
     }
   };
 
-  const floodedCount = floodedRoads?.length || 0;
-  const riskCount = riskRoads?.length || 0;
+  const floodedCount = statusCounts?.flooded || 0;
+  const riskCount = statusCounts?.risk || 0;
 
   // Sidebar content component (reused in both desktop and mobile)
   const SidebarContent = () => (
@@ -332,6 +334,7 @@ export default function Dashboard() {
           showDevices={true}
           onDeviceClick={setSelectedDeviceId}
           selectedDeviceId={selectedDeviceId}
+          devices={devices}
         />
         
         {/* Overlay Legend */}
@@ -339,18 +342,18 @@ export default function Dashboard() {
           <CardHeader className="px-3 md:px-6 pt-1 md:pt-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legend</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5 md:space-y-2 py-2 px-3 md:px-6 ">
+          <CardContent className="space-y-1.5 md:space-y-2 pb-2 px-3 md:px-6 ">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-red-500"></span>
-              <span className="text-xs md:text-sm">Flooded</span>
+              <span className="text-xs">Flooded</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-              <span className="text-xs md:text-sm">Risk / Warning</span>
+              <span className="text-xs">Risk / Warning</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-              <span className="text-xs md:text-sm">Passable</span>
+              <span className="text-xs">Passable</span>
             </div>
           </CardContent>
         </Card>

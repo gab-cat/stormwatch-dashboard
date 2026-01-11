@@ -15,4 +15,46 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    sourcemap: process.env.NODE_ENV === 'development',
+    rolldownOptions: {
+      output: {
+        // Rolldown advancedChunks configuration for optimized code splitting
+        advancedChunks: {
+          groups: [
+            {
+              name: 'react-vendor',
+              test: /[\\/]node_modules[\\/](react|react-dom|react-router)/,
+            },
+            {
+              name: 'auth-vendor',
+              test: /[\\/]node_modules[\\/]@clerk/,
+            },
+            {
+              name: 'backend-vendor',
+              test: /[\\/]node_modules[\\/]convex/,
+            },
+            {
+              name: 'map-vendor',
+              test: /[\\/]node_modules[\\/](leaflet|react-leaflet)/,
+            },
+            {
+              name: 'ui-vendor',
+              test: /[\\/]src[\\/]components[\\/]ui/,
+            },
+            {
+              name: 'admin-chunk',
+              test: /[\\/]src[\\/]components[\\/]admin/,
+            },
+          ],
+        },
+        // Chunk naming with content hash for cache optimization
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
+    },
+    // Limit chunk size to prevent overly large bundles
+    chunkSizeWarningLimit: 1000,
+  },
 })

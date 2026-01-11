@@ -190,12 +190,12 @@ export default function PredictionCards({
 
   return (
     <div className="space-y-6">
-      {/* Active Alerts Banner */}
+      {/* s Banner */}
       {activeAlerts && activeAlerts.length > 0 && (
         <Card className="bg-red-500/10 border-red-500/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-bold text-red-400 mb-2">Active Flood Alerts</h3>
                 <div className="space-y-2">
