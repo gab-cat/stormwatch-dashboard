@@ -53,7 +53,6 @@ export default function NotFound() {
             {/* Navigation buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 animate-in fade-in-0 slide-in-from-bottom-2" style={{ animationDelay: '300ms' }}>
               <Button
-                asChild
                 variant="default"
                 size="lg"
                 className="w-full min-h-[44px] group"
@@ -65,7 +64,6 @@ export default function NotFound() {
               </Button>
 
               <Button
-                asChild
                 variant="secondary"
                 size="lg"
                 className="w-full min-h-[44px] group"
@@ -84,7 +82,6 @@ export default function NotFound() {
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 <Button
-                  asChild
                   variant="ghost"
                   size="sm"
                   className="text-xs"
@@ -95,7 +92,6 @@ export default function NotFound() {
                   </Link>
                 </Button>
                 <Button
-                  asChild
                   variant="ghost"
                   size="sm"
                   className="text-xs"
