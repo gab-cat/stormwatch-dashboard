@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, SignInButton } from '@clerk/clerk-react';
 import Map from './Map';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -155,70 +155,83 @@ export default function Dashboard() {
                   </span>
                 </div>
 
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleStatusUpdate('flooded')}
-                    variant={selectedRoad.status === 'flooded' ? 'default' : 'secondary'}
-                    disabled={updatingStatus !== null}
-                    className={cn(
-                      "w-full justify-between min-h-[44px]",
-                      selectedRoad.status === 'flooded' && "bg-red-600 hover:bg-red-700 text-white",
-                      updatingStatus === 'flooded' && "opacity-75"
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      {updatingStatus === 'flooded' ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4" />
+                {isLoaded && user ? (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => handleStatusUpdate('flooded')}
+                      variant={selectedRoad.status === 'flooded' ? 'default' : 'secondary'}
+                      disabled={updatingStatus !== null}
+                      className={cn(
+                        "w-full justify-between min-h-[44px]",
+                        selectedRoad.status === 'flooded' && "bg-red-600 hover:bg-red-700 text-white",
+                        updatingStatus === 'flooded' && "opacity-75"
                       )}
-                      Mark as Flooded
-                    </span>
-                    {selectedRoad.status === 'flooded' && updatingStatus !== 'flooded' && <CheckCircle className="w-4 h-4" />}
-                  </Button>
+                    >
+                      <span className="flex items-center gap-2">
+                        {updatingStatus === 'flooded' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4" />
+                        )}
+                        Mark as Flooded
+                      </span>
+                      {selectedRoad.status === 'flooded' && updatingStatus !== 'flooded' && <CheckCircle className="w-4 h-4" />}
+                    </Button>
 
-                  <Button
-                    onClick={() => handleStatusUpdate('risk')}
-                    variant={selectedRoad.status === 'risk' ? 'default' : 'secondary'}
-                    disabled={updatingStatus !== null}
-                    className={cn(
-                      "w-full justify-between min-h-[44px]",
-                      selectedRoad.status === 'risk' && "bg-orange-600 hover:bg-orange-700 text-white",
-                      updatingStatus === 'risk' && "opacity-75"
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      {updatingStatus === 'risk' ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Info className="w-4 h-4" />
+                    <Button
+                      onClick={() => handleStatusUpdate('risk')}
+                      variant={selectedRoad.status === 'risk' ? 'default' : 'secondary'}
+                      disabled={updatingStatus !== null}
+                      className={cn(
+                        "w-full justify-between min-h-[44px]",
+                        selectedRoad.status === 'risk' && "bg-orange-600 hover:bg-orange-700 text-white",
+                        updatingStatus === 'risk' && "opacity-75"
                       )}
-                      Mark as At Risk
-                    </span>
-                    {selectedRoad.status === 'risk' && updatingStatus !== 'risk' && <CheckCircle className="w-4 h-4" />}
-                  </Button>
+                    >
+                      <span className="flex items-center gap-2">
+                        {updatingStatus === 'risk' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Info className="w-4 h-4" />
+                        )}
+                        Mark as At Risk
+                      </span>
+                      {selectedRoad.status === 'risk' && updatingStatus !== 'risk' && <CheckCircle className="w-4 h-4" />}
+                    </Button>
 
-                  <Button
-                    onClick={() => handleStatusUpdate('clear')}
-                    variant={selectedRoad.status === 'clear' ? 'default' : 'secondary'}
-                    disabled={updatingStatus !== null}
-                    className={cn(
-                      "w-full justify-between min-h-[44px]",
-                      selectedRoad.status === 'clear' && "bg-emerald-600 hover:bg-emerald-700 text-white",
-                      updatingStatus === 'clear' && "opacity-75"
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      {updatingStatus === 'clear' ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4" />
+                    <Button
+                      onClick={() => handleStatusUpdate('clear')}
+                      variant={selectedRoad.status === 'clear' ? 'default' : 'secondary'}
+                      disabled={updatingStatus !== null}
+                      className={cn(
+                        "w-full justify-between min-h-[44px]",
+                        selectedRoad.status === 'clear' && "bg-emerald-600 hover:bg-emerald-700 text-white",
+                        updatingStatus === 'clear' && "opacity-75"
                       )}
-                      Mark as Clear
-                    </span>
-                    {selectedRoad.status === 'clear' && updatingStatus !== 'clear' && <CheckCircle className="w-4 h-4" />}
-                  </Button>
-                </div>
+                    >
+                      <span className="flex items-center gap-2">
+                        {updatingStatus === 'clear' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4" />
+                        )}
+                        Mark as Clear
+                      </span>
+                      {selectedRoad.status === 'clear' && updatingStatus !== 'clear' && <CheckCircle className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="pt-2">
+                    <p className="text-xs text-muted-foreground text-center">
+                      <SignInButton mode="modal">
+                        <button className="text-primary hover:underline">
+                          Sign in
+                        </button>
+                      </SignInButton>
+                      {' '}to update road status
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ) : (
