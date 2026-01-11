@@ -83,4 +83,19 @@ export const routeMetadata: Record<string, MetadataConfig> = {
       "Learn how to integrate your IoT sensors with StormWatch. Complete guide for connecting devices, sending data, and configuring flood monitoring systems.",
     keywords: "IoT integration, sensor setup, API documentation, flood monitoring setup, StormWatch API",
   },
+  "/terms": {
+    title: "Terms of Service - StormWatch",
+    description:
+      "Terms of Service for StormWatch flood monitoring system. Read our terms and conditions for using the service.",
+    keywords: "terms of service, terms and conditions, StormWatch legal",
+  },
+  "/privacy": {
+    title: "Privacy Policy - StormWatch",
+    description:
+      "Privacy Policy for StormWatch flood monitoring system. Learn how we collect, use, and protect your data.",
+    keywords: "privacy policy, data protection, StormWatch privacy",
+  },
+  // Note: 404 pages are handled by the NotFound component which sets its own metadata
+  // via updateMetadata() when mounted. Unmatched routes will use default metadata
+  // from MetadataManager fallback, then NotFound will override with 404-specific metadata.
 };

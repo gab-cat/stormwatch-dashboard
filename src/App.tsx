@@ -7,6 +7,9 @@ import RoadManager from "./components/admin/RoadManager";
 import AlertManager from "./components/admin/AlertManager";
 import SimulationPanel from "./components/admin/SimulationPanel";
 import DocsPage from "./components/docs/DocsPage";
+import TermsPage from "./components/legal/TermsPage";
+import PrivacyPage from "./components/legal/PrivacyPage";
+import NotFound from "./components/NotFound";
 import { updateMetadata, routeMetadata } from "./lib/seo";
 
 function MetadataManager() {
@@ -39,6 +42,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/docs" element={<DocsPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/devices" replace />} />
           <Route path="devices" element={<DeviceManager />} />
@@ -46,6 +51,7 @@ function App() {
           <Route path="alerts" element={<AlertManager />} />
           <Route path="simulation" element={<SimulationPanel />} />
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

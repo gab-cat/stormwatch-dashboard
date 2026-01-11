@@ -46,7 +46,7 @@ export default function Dashboard() {
   // Sidebar content component (reused in both desktop and mobile)
   const SidebarContent = () => (
     <>
-      <div className="p-4 md:p-6 border-b border-border">
+      <div className="px-4 py-4 border-b border-border">
         <Logo subtitle="Naga City Flood Monitor" size="md" />
       </div>
 
@@ -268,9 +268,23 @@ export default function Dashboard() {
             </Link>
           </Button>
         )}
-        <p className="text-xs text-center text-muted-foreground">
-          StormWatch v1.0 • Naga City
-        </p>
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Link 
+            to="/terms" 
+            className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+            onClick={() => setMobileDrawerOpen(false)}
+          >
+            Terms of Service
+          </Link>
+          <span>•</span>
+          <Link 
+            to="/privacy" 
+            className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+            onClick={() => setMobileDrawerOpen(false)}
+          >
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </>
   );
