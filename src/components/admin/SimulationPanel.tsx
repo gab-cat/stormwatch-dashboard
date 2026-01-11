@@ -578,6 +578,7 @@ export default function SimulationPanel() {
                     showDevices={true}
                     onDeviceClick={(deviceId) => setSelectedDeviceId(deviceId)}
                     selectedDeviceId={selectedDeviceId}
+                    hideOverlays={true}
                   />
                     </div>
                 <p className="text-xs text-muted-foreground mt-2">

@@ -18,6 +18,7 @@ interface MapProps {
   showDevices?: boolean;
   onDeviceClick?: (deviceId: Id<"iotDevices"> | null) => void;
   selectedDeviceId?: Id<"iotDevices"> | null;
+  hideOverlays?: boolean;
 }
 
 // Fix for Leaflet default icon issues in React
@@ -315,6 +316,7 @@ export default function Map({
   showDevices = false,
   onDeviceClick,
   selectedDeviceId = null,
+  hideOverlays = false,
 }: MapProps) {
   const center: [number, number] = [13.6139, 123.1853]; // Naga City
   const [layersVisible, setLayersVisible] = useState({
@@ -612,7 +614,7 @@ export default function Map({
       })}
       
       {/* Alerts Overlay Panel */}
-      {layersVisible.alerts && (layersVisible.devices || showDevices) && activeAlerts && activeAlerts.length > 0 && (
+      {!hideOverlays && layersVisible.alerts && (layersVisible.devices || showDevices) && activeAlerts && activeAlerts.length > 0 && (
         <Card className={cn(
           "absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto z-[1000] bg-background/90 backdrop-blur-sm shadow-lg transition-all",
           showAlertsPanel ? "md:w-80" : "md:w-auto"
@@ -683,7 +685,7 @@ export default function Map({
       )}
 
       {/* Device Prediction Overlay */}
-      {selectedDeviceId && (
+      {!hideOverlays && selectedDeviceId && (
         <DevicePredictionOverlay
           deviceId={selectedDeviceId}
           onClose={() => onDeviceClick?.(null)}
