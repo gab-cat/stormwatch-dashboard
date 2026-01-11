@@ -6,7 +6,7 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://stormwatch-dashboard.vercel.app/</loc>
+    <loc>https://stormwatch.app/</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -14,7 +14,7 @@
   
   <!-- Documentation Page -->
   <url>
-    <loc>https://stormwatch-dashboard.vercel.app/docs</loc>
+    <loc>https://stormwatch.app/docs</loc>
     <lastmod>2024-01-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

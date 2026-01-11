@@ -10,4 +10,4 @@ Disallow: /admin/
 Disallow: /admin/*
 
 # Sitemap location
-Sitemap: https://stormwatch-dashboard.vercel.app/sitemap.xml
+Sitemap: https://stormwatch.app/sitemap.xml
