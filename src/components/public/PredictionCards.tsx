@@ -121,12 +121,6 @@ function DevicePredictionCard({
                     <Clock className="w-4 h-4" />
                     <span className="text-xs font-medium">{horizon}</span>
                   </div>
-                  <div className="mb-2">
-                    <div className="text-2xl font-bold">
-                      {waterLevel > 0 ? `${waterLevel.toFixed(0)}` : '—'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">cm height</div>
-                  </div>
                   {waterLevel > 0 && (
                     <div className="space-y-1.5 mt-3">
                       <div className="flex items-center gap-1.5 text-xs">

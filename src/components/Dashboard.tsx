@@ -321,11 +321,11 @@ export default function Dashboard() {
         />
         
         {/* Overlay Legend */}
-        <Card className="absolute bottom-2 right-2 md:bottom-6 md:right-6 bg-background/90 backdrop-blur-md shadow-2xl z-1000">
-          <CardHeader className="pb-2 md:pb-3 px-3 md:px-6 pt-3 md:pt-6">
+        <Card className="absolute bottom-2 py-0 right-2 md:bottom-6 md:right-6 bg-background/50 backdrop-blur-sm shadow-2xl z-1000">
+          <CardHeader className="px-3 md:px-6 pt-1 md:pt-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Legend</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5 md:space-y-2 px-3 md:px-6 pb-3 md:pb-6">
+          <CardContent className="space-y-1.5 md:space-y-2 py-2 px-3 md:px-6 ">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-red-500"></span>
               <span className="text-xs md:text-sm">Flooded</span>

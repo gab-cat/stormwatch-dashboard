@@ -232,10 +232,9 @@ function DevicePredictionOverlay({
               const waterLevel = prediction.predictedWaterLevel ?? 0;
               const passability = getPassability(waterLevel);
               const severityColors = getSeverityColor(prediction.severity);
-              const barPercentage = Math.min((waterLevel / 100) * 100, 100);
 
               return (
-                <Card key={horizon} className={cn("border-2", severityColors.border)}>
+                <Card key={horizon} className={cn("border-2 py-0", severityColors.border)}>
                   <CardContent className="p-2 md:p-3">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-2">
@@ -250,26 +249,6 @@ function DevicePredictionOverlay({
                       </Badge>
                     </div>
 
-                    {/* Water Level Display */}
-                    <div className="mb-2 md:mb-2.5">
-                      <div className="flex items-baseline gap-1.5 mb-1.5">
-                        <Droplet className={cn("w-4 h-4", severityColors.text)} />
-                        <div>
-                          <div className={cn("text-xl md:text-2xl font-bold leading-none", severityColors.text)}>
-                            {waterLevel > 0 ? waterLevel.toFixed(0) : '—'}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">cm</div>
-                        </div>
-                      </div>
-
-                      {/* Visual Bar */}
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn("h-full transition-all duration-500", severityColors.bar)}
-                          style={{ width: `${barPercentage}%` }}
-                        />
-                      </div>
-                    </div>
 
                     {/* Passability Indicators */}
                     {waterLevel > 0 && (
@@ -565,19 +544,10 @@ export default function Map({
                   <div className="space-y-2 md:space-y-3">
                     <div>
                       <p className="text-xs text-muted-foreground mb-2 font-medium">Latest Prediction</p>
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <Droplet className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                        <div>
-                          <div className="text-xl md:text-2xl font-bold leading-none">
-                            {highestPrediction.predictedWaterLevel.toFixed(0)}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">cm flood height</div>
-                        </div>
-                      </div>
                       <Badge
                         variant="outline"
                         className={cn(
-                          "text-xs mt-1",
+                          "text-xs",
                           highestPrediction.severity === 'critical' && 'bg-red-500/10 text-red-400 border-red-500/20',
                           highestPrediction.severity === 'high' && 'bg-orange-500/10 text-orange-400 border-orange-500/20',
                           highestPrediction.severity === 'medium' && 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
