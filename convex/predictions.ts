@@ -3,32 +3,32 @@ import { v } from "convex/values";
 
 /**
  * Calculate severity from flood height (in cm)
- * - Low: < 20cm
- * - Medium: 20-50cm
- * - High: 50-100cm
- * - Critical: ≥ 100cm
+ * - Low: < 10cm
+ * - Medium: 10-25cm
+ * - High: 25-35cm
+ * - Critical: > 35cm
  */
 export function getSeverityFromHeight(
   height: number
 ): "low" | "medium" | "high" | "critical" {
-  if (height < 20) return "low";
-  if (height < 50) return "medium";
-  if (height < 100) return "high";
+  if (height < 10) return "low";
+  if (height < 25) return "medium";
+  if (height < 35) return "high";
   return "critical";
 }
 
 /**
  * Calculate passability from flood height (in cm)
- * - Vehicles impassable: ≥ 30cm
- * - Humans impassable: ≥ 50cm
+ * - Vehicles impassable: ≥ 25cm
+ * - Humans impassable: ≥ 35cm
  */
 export function getPassability(height: number): {
   vehicles: boolean;
   humans: boolean;
 } {
   return {
-    vehicles: height < 30,
-    humans: height < 50,
+    vehicles: height < 25,
+    humans: height < 35,
   };
 }
 

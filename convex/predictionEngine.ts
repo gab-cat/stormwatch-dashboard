@@ -217,37 +217,57 @@ function generatePredictionForHorizon(
   currentLevel: number,
   trendFactor: number, // cm/hour
   weatherFactor: number, // cm impact
-  hours: number
+  hours: number,
+  weatherCondition: string
 ): {
   predictedWaterLevel: number;
   floodProbability: number;
+  uncertainty: number;
 } {
-  // Project water level: current + trend projection + weather impact
+  // Base projection
   const trendProjection = trendFactor * hours;
-  const projectedLevel = currentLevel + trendProjection + weatherFactor * hours;
+  let projectedLevel = currentLevel + trendProjection + weatherFactor * hours;
 
-  // Ensure non-negative
+  // Weather volatility multiplier
+  const volatilityMultipliers: Record<string, number> = {
+    Thunderstorm: 2.0,
+    HeavyRain: 1.8,
+    Rain: 1.4,
+    Drizzle: 1.2,
+    Clouds: 1.0,
+    Clear: 0.8,
+  };
+  const volatility = volatilityMultipliers[weatherCondition] ?? 1.0;
+
+  // Uncertainty increases with time horizon and weather volatility
+  const baseUncertainty = 1.5; // cm
+  const uncertainty = baseUncertainty * hours * volatility;
+
+  // Add random noise (bounded by uncertainty)
+  const noise = (Math.random() - 0.5) * uncertainty * 0.5;
+  projectedLevel += noise;
+
   const predictedWaterLevel = Math.max(0, projectedLevel);
 
-  // Calculate flood probability based on predicted level
-  // Probability increases as level approaches critical thresholds
+  // Updated flood probability based on new thresholds
   let floodProbability = 0;
-  if (predictedWaterLevel >= 100) {
+  if (predictedWaterLevel >= 35) {
     floodProbability = 0.95; // Critical
-  } else if (predictedWaterLevel >= 50) {
-    floodProbability = 0.7 + (predictedWaterLevel - 50) / 50 * 0.25; // High
-  } else if (predictedWaterLevel >= 20) {
-    floodProbability = 0.3 + (predictedWaterLevel - 20) / 30 * 0.4; // Medium
+  } else if (predictedWaterLevel >= 25) {
+    floodProbability = 0.7 + (predictedWaterLevel - 25) / 10 * 0.25; // High
+  } else if (predictedWaterLevel >= 10) {
+    floodProbability = 0.2 + (predictedWaterLevel - 10) / 15 * 0.5; // Medium
   } else {
-    floodProbability = predictedWaterLevel / 20 * 0.3; // Low
+    floodProbability = predictedWaterLevel / 10 * 0.2; // Low
   }
 
-  // Clamp probability between 0 and 1
-  floodProbability = Math.min(1, Math.max(0, floodProbability));
+  // Weather volatility affects probability confidence
+  floodProbability = Math.min(1, Math.max(0, floodProbability * (0.8 + volatility * 0.2)));
 
   return {
     predictedWaterLevel,
     floodProbability,
+    uncertainty,
   };
 }
 
@@ -283,6 +303,11 @@ export const generatePrediction = internalAction({
     const trendFactor = calculateTrendFactor(context.historicalReadings);
     const weatherFactor = calculateWeatherFactor(context.recentWeather);
 
+    // Get weather condition for variability calculation
+    const weatherCondition = context.recentWeather.length > 0
+      ? context.recentWeather[0].weatherCondition
+      : "Clear";
+
     // Generate predictions for each time horizon
     const timeHorizons: Array<"1h" | "2h" | "4h" | "8h"> = ["1h", "2h", "4h", "8h"];
     const horizonHours: Record<"1h" | "2h" | "4h" | "8h", number> = {
@@ -294,8 +319,8 @@ export const generatePrediction = internalAction({
 
     const predictions = timeHorizons.map((horizon) => {
       const hours = horizonHours[horizon];
-      const { predictedWaterLevel, floodProbability } =
-        generatePredictionForHorizon(currentLevel, trendFactor, weatherFactor, hours);
+      const { predictedWaterLevel, floodProbability, uncertainty } =
+        generatePredictionForHorizon(currentLevel, trendFactor, weatherFactor, hours, weatherCondition);
       const severity = getSeverityFromHeight(predictedWaterLevel);
 
       return {
@@ -309,6 +334,8 @@ export const generatePrediction = internalAction({
           currentLevel,
           trendFactor,
           weatherFactor,
+          uncertainty,
+          weatherCondition,
           historicalReadingsCount: context.historicalReadings.length,
           weatherDataCount: context.recentWeather.length,
         },
