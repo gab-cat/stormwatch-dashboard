@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import {
-  Play,
   SkipForward,
   SkipBack,
   RotateCcw,
@@ -225,25 +224,6 @@ export default function SimulationPanel() {
     }
   };
 
-  const handleRunAll = async () => {
-    if (!selectedDeviceId) {
-      addLog("Please select a device first", "error");
-      return;
-    }
-
-    setIsAutoPlaying(true);
-    resetSteps();
-    addLog(`Starting ${SCENARIOS[selectedScenario].name} simulation...`, "info");
-
-    // Execute all steps sequentially
-    for (let i = 1; i <= steps.length; i++) {
-      if (!isAutoPlaying) break; // Allow stopping
-      await executeStep(i);
-      if (i < steps.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1500)); // Delay between steps
-      }
-    }
-  };
 
   const handleReset = async () => {
     setIsAutoPlaying(false);
@@ -254,7 +234,7 @@ export default function SimulationPanel() {
       try {
         await resetSimulation({ deviceId: selectedDeviceId });
         addLog("Cleared simulated data", "success");
-      } catch (error) {
+      } catch {
         addLog("Failed to clear simulated data", "warning");
       }
     }

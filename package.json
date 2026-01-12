@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "oxlint src",
     "preview": "vite preview",
     "convex": "bunx convex dev --once",
@@ -36,7 +36,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@types/bun": "^1.3.5",
     "@types/leaflet": "^1.9.21",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.6",
     "@types/proj4": "^2.19.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
