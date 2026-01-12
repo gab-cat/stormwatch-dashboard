@@ -120,4 +120,21 @@ export default defineSchema({
   })
     .index("by_active", ["isActive"])
     .index("by_severity", ["severity"]),
+
+  // Weather data from OpenWeatherMap API (shared pool for Naga City)
+  weatherData: defineTable({
+    deviceId: v.optional(v.id("iotDevices")), // Optional for backward compatibility, not used for shared pool
+    latitude: v.number(),
+    longitude: v.number(),
+    temperature: v.number(), // Celsius
+    humidity: v.number(), // Percentage
+    rainfall1h: v.optional(v.number()), // mm in last hour
+    rainfall3h: v.optional(v.number()), // mm in last 3 hours
+    weatherCondition: v.string(), // e.g., "Rain", "Clear"
+    weatherDescription: v.string(),
+    windSpeed: v.number(),
+    cloudCoverage: v.number(),
+    fetchedAt: v.number(),
+  })
+    .index("by_fetchedAt", ["fetchedAt"]),
 });

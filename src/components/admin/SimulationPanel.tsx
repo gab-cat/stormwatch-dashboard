@@ -382,25 +382,6 @@ export default function SimulationPanel() {
                 <CardTitle className="text-lg">3. Run Simulation</CardTitle>
                   </CardHeader>
               <CardContent className="space-y-3">
-                              <Button
-                  onClick={handleRunAll}
-                  disabled={!selectedDeviceId || isAutoPlaying}
-                        className="w-full"
-                  size="lg"
-                      >
-                  {isAutoPlaying ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Running...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2" />
-                      Run All Steps
-                          </>
-                        )}
-                      </Button>
-
                 <div className="grid grid-cols-3 gap-2">
                   <Button
                     onClick={handlePrevious}

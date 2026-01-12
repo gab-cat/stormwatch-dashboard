@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -123,6 +123,14 @@ http.route({
     await ctx.runMutation(api.devices.updateLastSeen, {
       deviceId: device._id,
     });
+
+    // Schedule async prediction generation for water_level readings
+    if (body.readingType === "water_level") {
+      await ctx.scheduler.runAfter(0, internal.predictionEngine.generatePrediction, {
+        deviceId: device._id,
+        readingId,
+      });
+    }
 
     return new Response(
       JSON.stringify({
